@@ -8,7 +8,7 @@ import {openLocal} from './delivery.js';
 import {demoAudit, demoOverviewAudit, overviewLayout} from './demo.mjs';
 
 try {
-  const {positionals, values} = parseArgs({allowPositionals: true, options: {repo: {type: 'string'}, input: {type: 'string'}, out: {type: 'string'}, open: {type: 'boolean'}, 'editor-url': {type: 'string'}}});
+  const {positionals, values} = parseArgs({allowPositionals: true, options: {repo: {type: 'string'}, input: {type: 'string'}, out: {type: 'string'}, open: {type: 'boolean'}, 'editor-url': {type: 'string'}, 'diagram-type': {type: 'string'}}});
   const command = positionals[0];
   if (positionals.length !== 1) throw new Error('Uso: node src/cli.mjs discover|render|demo|demo-overview [opciones]');
   const overview = command === 'demo-overview';
@@ -26,7 +26,9 @@ try {
     if (command === 'render' && !values.input) throw new Error('--input es requerido.');
     const audit = demo ? await (overview ? demoOverviewAudit : demoAudit)(repo) : JSON.parse(await readFile(values.input, 'utf8'));
     const checked = await validateAudit(repo, audit);
-    const content = renderDrawio(checked, overview ? overviewLayout : undefined);
+    const type = values['diagram-type'] ?? 'components';
+    if (!['components', 'sequence'].includes(type)) throw new Error('--diagram-type debe ser components o sequence.');
+    const content = renderDrawio(checked, {type, layout: overview && type === 'components' ? overviewLayout : undefined});
     await atomicWrite(path.resolve(out), content);
     if (demo) await writeJson(path.join(path.dirname(path.resolve(out)), 'audit.json'), audit);
     process.stdout.write(`${JSON.stringify({status: 'validated', output: path.resolve(out), endpoints: checked.endpoints.length, scope: 'static-source-evidence'})}\n`);

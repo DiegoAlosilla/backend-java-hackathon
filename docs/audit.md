@@ -15,6 +15,8 @@ node src/cli.mjs render --repo 'C:/repos/mi-servicio' --input runs/servicio/audi
 
 Copilot utiliza `inventory.json` para identificar entradas, archivos y sus hashes. Escribe `audit.json` siguiendo el ejemplo generado por `npm run demo` en `runs/demo/audit.json`. El auditor debe leer las fuentes antes de completar las afirmaciones.
 
+`render` usa un **diagrama de componentes** por defecto. Dibuja el endpoint y las dependencias como bloques editables y numera las conexiones en el orden que recorre la animación. Para pedir una vista de secuencia, añade `--diagram-type sequence`.
+
 El objeto raíz contiene `version: 1`, `service`, `repositoryFingerprint` tomado del inventario y `endpoints`. Cada endpoint contiene `id`, `method` en mayúsculas, `path`, `title`, `contract`, `evidence`, `dependencies`, `steps` y `findings`.
 
 - `contract` contiene `file` relativo al repositorio y `sha256` de los bytes UTF-8. El snapshot original se incorpora al archivo. Se reutiliza el validador de OpenAPI 3.0/3.1 y Swagger 2 del fork.

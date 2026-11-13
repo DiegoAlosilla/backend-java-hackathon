@@ -48,7 +48,9 @@ afectada y vuelve a invocarlo.
 
 Para una auditoría usa auditor → diagrammer → reviewer. Para un cambio solicitado
 con vista visual, genera la auditoría sobre el estado final validado y vincula
-la evidencia del cambio. Determina el origen/base del diff antes de atribuir
+la evidencia del cambio. Usa un diagrama de componentes por defecto y transmite
+al auditor y al especialista en diagramación el tipo explícito que pida el usuario.
+Determina el origen/base del diff antes de atribuir
 un hallazgo al cambio. Si el usuario pide ejecutar un cambio, usa los comandos
 del servicio y deja explícita la ejecución observada.
 

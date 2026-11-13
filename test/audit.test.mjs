@@ -27,6 +27,9 @@ test('demo genera XML nativo con contrato, evidencia, animación y contenido esc
   assert.match(output, /&lt;script&gt;/);
   assert.doesNotMatch(output, /<script>/);
   assert.match(output, /id="__audit_edge_0"/);
+  assert.match(output, /shape=component/);
+  assert.doesNotMatch(output, /shape=umlLifeline/);
+  assert.match(renderDrawio(checked, {type: 'sequence'}), /shape=umlLifeline/);
   assert.equal(checked.registry.revisions.length, 1);
 });
 

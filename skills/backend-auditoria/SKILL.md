@@ -22,7 +22,7 @@ en la sesión Copilot elegida.
 4. Para revisar un cambio, consulta el diff contra la base indicada y las fuentes
    completas. Relaciona hallazgos con líneas y pruebas/reportes recibidos. Declara
    cuándo un hallazgo es preexistente o su origen todavía no está demostrado.
-5. Devuelve el JSON y cobertura al orquestador para diagramación y revisión.
+5. Devuelve el JSON, la cobertura y el tipo de diagrama al orquestador. Usa componentes por defecto y respeta el tipo explícito que pida el usuario. Conserva un ID por componente y el orden de las interacciones, incluidos retornos, publicaciones y escrituras en caché cuando el código los respalde.
 
 Guarda las salidas solicitadas fuera del microservicio, por defecto en
 `<plugin>/runs/<servicio>-<fecha-hora>/`. El auditor puede ejecutar descubrimiento

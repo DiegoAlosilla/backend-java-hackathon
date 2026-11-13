@@ -89,12 +89,31 @@ export async function validateAudit(repo, audit) {
 const xml = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&apos;').replaceAll('\n', '&#10;').replaceAll('\r', '&#13;');
 const attr = values => Object.entries(values).map(([key, value]) => `${key}="${xml(typeof value === 'object' ? JSON.stringify(value) : value)}"`).join(' ');
 
-export function renderDrawio(audit, layout) {
+function componentPorts(steps, positions) {
+  const links = new Map();
+  for (const step of steps) {
+    const pair = [step.from, step.to].sort().join(':');
+    if (!links.has(pair)) links.set(pair, []);
+    links.get(pair).push(step);
+  }
+  return steps.map(step => {
+    const pair = links.get([step.from, step.to].sort().join(':'));
+    const slot = (pair.indexOf(step) + 1) / (pair.length + 1);
+    const [fromX, fromY] = positions[step.from];
+    const [toX, toY] = positions[step.to];
+    if (fromX === toX) return fromY < toY ? [slot, 1, slot, 0] : [slot, 0, slot, 1];
+    return fromX < toX ? [1, slot, 0, slot] : [0, slot, 1, slot];
+  });
+}
+
+export function renderDrawio(audit, {layout, type = 'components'} = {}) {
+  const sequence = type === 'sequence';
   const pages = audit.endpoints.map(endpoint => {
     const flow = {version: 1, steps: endpoint.steps.map((step, i) => ({cellId: step.to, edgeId: `__audit_edge_${i}`, direction: step.direction, label: step.label}))};
     function vertex(id, label, x, y, fill, metadata = {}, shape = 'rounded=1') {
-      const width = layout ? 200 : 300;
-      return `<object ${attr({id, label, ...metadata})}><mxCell vertex="1" parent="1" style="${shape};whiteSpace=wrap;html=0;fillColor=${fill};strokeColor=#64748b;fontSize=14;"><mxGeometry x="${x}" y="${y}" width="${width}" height="100" as="geometry"/></mxCell></object>`;
+      const height = sequence ? 110 + endpoint.steps.length * 48 : 100;
+      const style = sequence ? 'shape=umlLifeline;size=56' : shape;
+      return `<object ${attr({id, label, ...metadata})}><mxCell vertex="1" parent="1" style="${style};whiteSpace=wrap;html=0;fillColor=${fill};strokeColor=#64748b;fontSize=14;"><mxGeometry x="${x}" y="${y}" width="200" height="${height}" as="geometry"/></mxCell></object>`;
     }
     const evidence = entries => ({version: 1, entries, revision: audit.git.revision, fingerprint: audit.repositoryFingerprint});
     const endpointLabel = `${endpoint.title || audit.service}\n${endpoint.method} ${endpoint.path}`;
@@ -104,22 +123,31 @@ export function renderDrawio(audit, layout) {
       cache: ['#fee2e2', 'shape=cylinder3;size=15'], database: ['#dcfce7', 'shape=cylinder3;size=15'],
       event: ['#f3e8ff', 'rounded=1']
     };
-    const cells = [vertex(endpoint.id, layout ? endpointLabel : `${endpoint.method} ${endpoint.path}\n${endpoint.title || audit.service}`, ...(layout?.positions[endpoint.id] ?? [80, 100]), '#dae8fc', endpointMetadata, layout ? 'shape=component' : undefined)];
+    const positions = {[endpoint.id]: [80, 100]};
     endpoint.dependencies.forEach((dep, i) => {
-      const position = layout?.positions[dep.id] ?? [500 + (i % 2) * 400, 100 + Math.floor(i / 2) * 220];
-      const [fill, shape] = layout ? components[dep.kind] : ['#d5e8d4', 'rounded=1'];
-      cells.push(vertex(dep.id, layout ? dep.label : `${dep.kind}\n${dep.label}`, ...position, fill, {auditEvidence: evidence(dep.evidence)}, shape));
+      positions[dep.id] = sequence ? [80 + (i + 1) * 245, 100] : [460 + (i % 2) * 350, 100 + Math.floor(i / 2) * 200];
+    });
+    Object.assign(positions, layout?.positions);
+    const portsByStep = sequence ? endpoint.steps.map((_, i) => {
+      const y = (100 + i * 48) / (110 + endpoint.steps.length * 48);
+      return [0.5, y, 0.5, y];
+    }) : layout?.ports ?? componentPorts(endpoint.steps, positions);
+    const cells = [vertex(endpoint.id, endpointLabel, ...positions[endpoint.id], '#dae8fc', endpointMetadata, 'shape=component')];
+    endpoint.dependencies.forEach((dep, i) => {
+      const [fill, shape] = components[dep.kind];
+      cells.push(vertex(dep.id, dep.label, ...positions[dep.id], fill, {auditEvidence: evidence(dep.evidence)}, shape));
     });
     endpoint.steps.forEach((step, i) => {
       const response = step.direction === 'response';
-      const [exitX, exitY, entryX, entryY] = layout?.ports[i] ?? (response ? [0, 0.8, 1, 0.8] : [1, 0.2, 0, 0.2]);
+      const [exitX, exitY, entryX, entryY] = portsByStep[i];
       const ports = `exitX=${exitX};exitY=${exitY};entryX=${entryX};entryY=${entryY};`;
-      const label = layout ? `${i + 1}. ${step.label}` : step.label;
+      const label = `${i + 1}. ${step.label}`;
       const labelOffset = layout?.labelOffsets?.[i];
       const offset = labelOffset ? `<mxPoint x="${labelOffset[0]}" y="${labelOffset[1]}" as="offset"/>` : '';
-      cells.push(`<object ${attr({id: `__audit_edge_${i}`, label, auditEvidence: evidence(step.evidence)})}><mxCell edge="1" parent="1" source="${xml(step.from)}" target="${xml(step.to)}" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;labelBackgroundColor=#ffffff;${ports}strokeColor=${response ? '#15803d' : '#2563eb'};${response ? 'dashed=1;' : ''}"><mxGeometry relative="1" as="geometry">${offset}</mxGeometry></mxCell></object>`);
+      const routing = sequence ? 'exitPerimeter=0;entryPerimeter=0;' : 'edgeStyle=orthogonalEdgeStyle;rounded=1;';
+      cells.push(`<object ${attr({id: `__audit_edge_${i}`, label, auditEvidence: evidence(step.evidence)})}><mxCell edge="1" parent="1" source="${xml(step.from)}" target="${xml(step.to)}" style="${routing}html=0;endArrow=block;labelBackgroundColor=#ffffff;${ports}strokeColor=${response ? '#15803d' : '#2563eb'};${response ? 'dashed=1;' : ''}"><mxGeometry relative="1" as="geometry">${offset}</mxGeometry></mxCell></object>`);
     });
-    const bottom = 320 + Math.max(0, Math.ceil(endpoint.dependencies.length / 2) - 1) * 220;
+    const bottom = sequence ? 250 + endpoint.steps.length * 48 : Math.max(...Object.values(positions).map(([, y]) => y)) + 160;
     endpoint.findings.forEach((finding, i) => cells.push(vertex(`__audit_finding_${i}`, `${finding.severity.toUpperCase()}\n${finding.claim}`, 80 + (i % 3) * 340, bottom + Math.floor(i / 3) * 140, '#fff2cc', {auditEvidence: evidence(finding.evidence)})));
     if (!layout) cells.push(vertex('__audit_scope', 'Análisis estático con evidencia de código.\nLa animación explica pasos descritos en la auditoría.', 80, bottom + Math.ceil(endpoint.findings.length / 3) * 140, '#f5f5f5'));
     return `<diagram ${attr({id: endpoint.id, name: `${endpoint.method} ${endpoint.path}`})}><mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>${cells.join('')}</root></mxGraphModel></diagram>`;

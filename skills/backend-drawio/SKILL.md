@@ -9,6 +9,8 @@ user-invocable: false
 Lee [el contrato del CLI](../../docs/audit.md). Usa el `audit.json` del auditor y
 la raíz real del servicio. Ejecuta desde el plugin instalado.
 
+El formato predeterminado es **componentes**, con un bloque por participante, conexiones numeradas y reproducción en el orden auditado. Para una solicitud explícita de secuencia, añade `--diagram-type sequence`. Si el usuario pide otro formato, informa las opciones del CLI y acuerda cómo entregarlo.
+
 ```powershell
 node <plugin>/src/cli.mjs render --repo <servicio> --input <salida>/audit.json --out <salida>/audit.drawio
 ```
