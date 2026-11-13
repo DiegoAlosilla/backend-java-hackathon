@@ -12,6 +12,22 @@ El GIF muestra el formato del auditor. En el ejemplo de saldo, Cuentas lee Redis
 
 Para una demo de principio a fin, levanta el **CRUD de cuentas**. Audita el registro y el listado existentes, pide implementar `DELETE`, ejecuta las pruebas y vuelve a diagramar el endpoint nuevo. Usa Quarkus y adaptadores locales en memoria para Redis, BD y Kafka. [Guion de la demo CRUD](examples/accounts-crud/README.md)
 
+## Cómo trabaja el agente al agregar un endpoint
+
+Si le pides **«Agrega un nuevo endpoint a este microservicio»**, `backend-java` coordina este flujo.
+
+> En el CRUD de cuentas, agrega `DELETE /accounts/{id}`. Si la cuenta existe, elimínala de la base de datos, borra su clave de Redis si está presente, invalida la lista cacheada y publica `accounts.deleted`. Devuelve `204` sin cuerpo. Si la cuenta no existe, devuelve `404` sin publicar el evento. Actualiza OpenAPI, ejecuta las pruebas y pasa el cambio al revisor.
+
+1. **Entiende el servicio.** Localiza los endpoints existentes, el contrato OpenAPI, las capas Java y las convenciones del proyecto. Si falta una decisión que cambia el comportamiento, como qué devolver cuando el recurso no existe, te la consulta.
+2. **Presenta el plan.** Define método, ruta, entradas, respuestas, archivos afectados y criterios de aceptación. Te muestra el plan antes de editar y avanza con el cambio solicitado.
+3. **Actualiza el contrato.** Añade la operación en la fuente OpenAPI del servicio. Si el proyecto genera interfaces o modelos desde el contrato, usa su proceso de generación.
+4. **Implementa el endpoint.** Añade el handler y la lógica de negocio siguiendo los patrones del servicio. Si hacen falta cambios de configuración por ambiente, te entrega el delta.
+5. **Prueba y valida.** Añade pruebas unitarias y usa Karate cuando corresponda. Ejecuta el build y los controles de calidad aplicables, como Checkstyle y JaCoCo, y relaciona cada criterio de aceptación con sus resultados.
+6. **Pasa el cambio a revisión independiente.** El revisor contrasta el diff, el contrato y los reportes. Si encuentra un problema, el orquestador delega la corrección y repite las validaciones afectadas.
+7. **Entrega el resultado.** Resume qué cambió, qué pasó y qué quedó pendiente. Propone la agrupación de commits y espera tu aprobación antes de crearlos.
+
+**Si también pides el diagrama**, el auditor toma el código final y abre el endpoint en tu fork de Draw.io con su contrato Swagger, citas del código y el recorrido animado.
+
 ## Componentes
 
 | Componente | Función |
