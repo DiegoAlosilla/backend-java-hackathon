@@ -39,6 +39,8 @@ Abre `examples/accounts-crud` en VS Code, selecciona `backend-java` en Copilot y
 
 [Ver las preguntas, el JSON de ejemplo y el comando para reproducirlo](docs/delete-design.md)
 
+Con la spec lista, puedes pedir **«Estima el esfuerzo de DELETE y dime cuántos developers necesito en 2 días hábiles con 7 horas efectivas diarias»**. La calculadora desglosa las tareas y tiene en cuenta qué trabajo puede avanzar en paralelo. [Calculadora de esfuerzo y equipo](docs/delete-design.md#estimar-esfuerzo-y-equipo)
+
 ## Cómo trabaja el agente al agregar un endpoint
 
 Si le pides **«Agrega un nuevo endpoint a este microservicio»**, `backend-java` coordina este flujo.

@@ -2,21 +2,32 @@ import {parseArgs} from 'node:util';
 import {readFile} from 'node:fs/promises';
 import path from 'node:path';
 import {discover} from './discovery.js';
-import {writeJson, atomicWrite, projectRoot} from './io.js';
+import {writeJson, atomicWrite, canonicalTarget, projectRoot} from './io.js';
 import {validateAudit, renderDrawio} from './audit.mjs';
 import {openLocal} from './delivery.js';
 import {demoAudit, demoOverviewAudit, overviewLayout} from './demo.mjs';
 import {designDelete} from './delete-design.mjs';
+import {estimateDelete, formatDeleteEstimate} from './delete-estimate.mjs';
 
 try {
-  const {positionals, values} = parseArgs({allowPositionals: true, options: {repo: {type: 'string'}, input: {type: 'string'}, out: {type: 'string'}, open: {type: 'boolean'}, 'editor-url': {type: 'string'}, 'diagram-type': {type: 'string'}}});
+  const {positionals, values} = parseArgs({allowPositionals: true, options: {repo: {type: 'string'}, input: {type: 'string'}, out: {type: 'string'}, open: {type: 'boolean'}, 'editor-url': {type: 'string'}, 'diagram-type': {type: 'string'}, days: {type: 'string'}, 'hours-per-day': {type: 'string'}}});
   const command = positionals[0];
-  if (positionals.length !== 1) throw new Error('Uso: node src/cli.mjs discover|render|demo|demo-overview|design-delete [opciones]');
+  if (positionals.length !== 1) throw new Error('Uso: node src/cli.mjs discover|render|demo|demo-overview|design-delete|estimate-delete [opciones]');
   const overview = command === 'demo-overview';
   const demo = command === 'demo' || overview;
   const repo = values.repo || (demo ? path.join(projectRoot, 'examples/account-service') : undefined);
-  if (!repo) throw new Error('--repo es requerido.');
-  if (command === 'design-delete') {
+  if (command !== 'estimate-delete' && !repo) throw new Error('--repo es requerido.');
+  if (command === 'estimate-delete') {
+    if (!values.input) throw new Error('estimate-delete requiere --input <spec.md>, --days y --hours-per-day.');
+    const report = formatDeleteEstimate(estimateDelete(await readFile(values.input, 'utf8'), Number(values.days), Number(values['hours-per-day'])));
+    if (values.out) {
+      const source = await canonicalTarget(values.input);
+      const output = await canonicalTarget(values.out);
+      if (source === output) throw new Error('La salida debe ser distinta de la spec.');
+      await atomicWrite(output, report);
+    }
+    process.stdout.write(report);
+  } else if (command === 'design-delete') {
     if (!values.input || !values.out) throw new Error('design-delete requiere --input <respuestas.json> y --out <directorio>.');
     if (values['diagram-type'] && values['diagram-type'] !== 'components') throw new Error('design-delete genera un diagrama de componentes.');
     const answers = JSON.parse(await readFile(values.input, 'utf8'));

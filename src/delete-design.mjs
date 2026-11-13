@@ -7,12 +7,18 @@ import {contractSnapshot, renderDrawio} from './audit.mjs';
 const route = '/accounts/{id}';
 const contractFile = 'src/main/resources/META-INF/openapi.yaml';
 
-export async function designDelete(repo, answers, out) {
+export function deleteDecisions(answers) {
   const {missingStatus, validateId, topic, databaseFirst} = answers ?? {};
   if (![204, 404].includes(missingStatus) || typeof validateId !== 'boolean' || databaseFirst !== true
       || typeof topic !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$/.test(topic)) {
     throw new Error('Confirma missingStatus (204 o 404), validateId (boolean), topic y databaseFirst (true).');
   }
+  return {missingStatus, validateId, topic, databaseFirst};
+}
+
+export async function designDelete(repo, answers, out) {
+  const decisionsInput = deleteDecisions(answers);
+  const {missingStatus, validateId, topic} = decisionsInput;
   const root = await canonicalTarget(repo);
   const output = await canonicalTarget(out);
   if (inside(root, output)) throw new Error('Guarda los entregables del diseño fuera del microservicio.');
@@ -75,6 +81,7 @@ export async function designDelete(repo, answers, out) {
     }
   });
   const spec = [
+    '---', stringify({design: 'accounts-delete-v1', decisions: decisionsInput}).trimEnd(), '---', '',
     '# Propuesta de diseño · DELETE /accounts/{id}', '',
     'Estado: propuesta para revisión. Aplica al CRUD de cuentas con adaptadores locales.', '',
     '## Criterios de aceptación', '',
@@ -84,7 +91,7 @@ export async function designDelete(repo, answers, out) {
   ].join('\n');
   const release = await lockRun(output);
   try {
-    await writeJson(path.join(output, 'decisions.json'), answers);
+    await writeJson(path.join(output, 'decisions.json'), decisionsInput);
     await atomicWrite(path.join(output, 'spec.md'), spec);
     await atomicWrite(path.join(output, 'openapi.proposed.yaml'), snapshot);
     await atomicWrite(path.join(output, 'delete.proposed.drawio'), content);

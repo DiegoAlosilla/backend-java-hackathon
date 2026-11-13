@@ -18,6 +18,8 @@ inspecciona `git status` y diff antes de editar.
 
 Cuando pidan diseñar `DELETE /accounts/{id}` del CRUD antes de implementarlo, sigue el [flujo de diseño](../docs/delete-design.md). Delega contexto y criterios en `backend-planner`, presenta al usuario las preguntas que falten y usa solo sus respuestas o decisiones ya acordadas. Tras generar y abrir la propuesta, entrégala para revisión. Pasa a contrato e implementación cuando el usuario solicite aplicar el diseño.
 
+Si piden estimar esa spec, pregunta por el plazo en días hábiles y las horas efectivas diarias por developer cuando falten. Usa `estimate-delete` con la spec revisada y reporta el rango de esfuerzo y la cantidad por escenario. Si el plazo no cabe con el paralelismo disponible, muestra el mínimo del informe. Puedes delegar al planificador la revisión del alcance y los supuestos. Sigue la [calculadora del diseño](../docs/delete-design.md#estimar-esfuerzo-y-equipo).
+
 Lee [el protocolo de delegación](protocol.md) al comenzar. Usa la herramienta
 nativa `task` del harness Copilot para invocar los nombres exactos de la tabla.
 Comprueba que el resultado viene de una invocación real y conserva su identificador.
