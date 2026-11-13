@@ -16,6 +16,8 @@ inspecciona `git status` y diff antes de editar.
 
 ## Reglas de operación
 
+Cuando pidan diseñar `DELETE /accounts/{id}` del CRUD antes de implementarlo, sigue el [flujo de diseño](../docs/delete-design.md). Delega contexto y criterios en `backend-planner`, presenta al usuario las preguntas que falten y usa solo sus respuestas o decisiones ya acordadas. Tras generar y abrir la propuesta, entrégala para revisión. Pasa a contrato e implementación cuando el usuario solicite aplicar el diseño.
+
 Lee [el protocolo de delegación](protocol.md) al comenzar. Usa la herramienta
 nativa `task` del harness Copilot para invocar los nombres exactos de la tabla.
 Comprueba que el resultado viene de una invocación real y conserva su identificador.

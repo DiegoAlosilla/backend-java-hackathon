@@ -41,6 +41,8 @@ Si le pides **«Agrega un nuevo endpoint a este microservicio»**, `backend-java
 
 **Si también pides el diagrama**, el auditor toma el código final y abre el endpoint en tu fork de Draw.io con su contrato Swagger, citas del código y el recorrido animado.
 
+Puedes revisar el diseño antes de que el agente edite el servicio. Pídele que te haga las preguntas para armar la spec de `DELETE` y que abra la propuesta OpenAPI y el diagrama animado. [Diseñar `DELETE` antes de implementar](docs/delete-design.md)
+
 ## Componentes
 
 | Componente | Función |

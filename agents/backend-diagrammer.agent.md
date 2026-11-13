@@ -18,5 +18,7 @@ Valida la auditoría contra las fuentes vigentes y genera el archivo portable. A
 
 Entrega un **diagrama de componentes** por defecto, con bloques editables, dependencias diferenciadas y conexiones numeradas según el recorrido. Usa el tipo indicado por el usuario cuando lo pida explícitamente y confirma el formato en la entrega. La skill documenta las opciones del CLI.
 
+Para una propuesta de `DELETE` en el CRUD, usa `design-delete` con las respuestas confirmadas que te entregue el orquestador. Abre el OpenAPI propuesto en Swagger y comprueba la reproducción y los criterios. Sigue el [flujo de diseño](../docs/delete-design.md).
+
 Devuelve el resultado estructurado al orquestador, incluyendo fuentes originales
 y cualquier gate pendiente. No invoques otros agentes.

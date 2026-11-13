@@ -110,16 +110,17 @@ export function installAuditPanel(ui: any, root: HTMLElement): void {
     selected = cell;
     const evidenceRaw = cell && graph.getAttributeForCell(cell, 'auditEvidence', '');
     const flowRaw = cell && graph.getAttributeForCell(cell, 'auditFlow', '');
-    panel.hidden = !evidenceRaw && !flowRaw;
+    const designRaw = cell && graph.getAttributeForCell(cell, 'designDecisions', '');
+    panel.hidden = !evidenceRaw && !flowRaw && !designRaw;
     if (panel.hidden) return;
-    panel.append(text('h3', 'Evidencia y recorrido'));
+    panel.append(text('h3', designRaw ? 'Diseño propuesto · recorrido y criterios' : 'Evidencia y recorrido'));
     try {
       if (flowRaw) {
         const flow = JSON.parse(flowRaw);
         if (flow.version !== 1 || !Array.isArray(flow.steps) || flow.steps.length > 500) throw Error('Versión o pasos de recorrido no compatibles.');
         steps = flow.steps;
         if (steps.some(step => typeof step.cellId !== 'string' || typeof step.label !== 'string' || !['request', 'response'].includes(step.direction))) throw Error('El recorrido contiene un paso inválido.');
-        panel.append(text('p', 'Recorrido descriptivo del análisis · azul petición · verde respuesta'));
+        panel.append(text('p', designRaw ? 'Comportamiento esperado · azul petición · verde respuesta' : 'Recorrido descriptivo del análisis · azul petición · verde respuesta'));
         status = text('p', steps.length ? `${steps.length} pasos disponibles` : 'Sin pasos') as HTMLParagraphElement;
         status.setAttribute('role', 'status');
         play = document.createElement('button');
@@ -144,6 +145,16 @@ export function installAuditPanel(ui: any, root: HTMLElement): void {
         const restart = text('button', 'Reiniciar') as HTMLButtonElement;
         restart.onclick = () => { reset(); status.textContent = `${steps.length} pasos disponibles`; };
         panel.append(play, next, restart, status);
+      }
+      if (designRaw) {
+        const decisions = JSON.parse(designRaw);
+        if (!Array.isArray(decisions) || decisions.length > 500) throw Error('Criterios de diseño inválidos.');
+        for (const decision of decisions) {
+          if (typeof decision?.id !== 'string' || typeof decision.text !== 'string') throw Error('Criterio de diseño inválido.');
+          const criterion = text('p', `${decision.id} · ${decision.text}`);
+          criterion.style.whiteSpace = 'normal';
+          panel.append(criterion);
+        }
       }
       if (evidenceRaw) {
         const evidence = JSON.parse(evidenceRaw);

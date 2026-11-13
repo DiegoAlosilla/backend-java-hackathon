@@ -54,6 +54,8 @@ El primer archivo contiene dos páginas para registrar y listar con caché vací
 
 ## 3. Pide implementar `DELETE /accounts/{id}`
 
+Si quieres empezar por la spec, sigue la entrevista guiada y revisa el contrato y el diagrama propuestos antes de pedir la implementación. [Diseño de `DELETE`](../../docs/delete-design.md)
+
 > Implementa `DELETE /accounts/{id}`. Empieza por actualizar el OpenAPI. Usa la base de datos como fuente de verdad. Si la cuenta existe, elimínala de la BD, borra `accounts:{id}` de Redis si está presente, invalida la lista cacheada, publica `accounts.deleted` y devuelve `204` sin cuerpo. Si la BD indica que la cuenta no existe, devuelve `404` sin publicar evento. Mantén la consistencia con registro y listado. Añade pruebas HTTP para `204`, `404` y un listado posterior sin la cuenta. Comprueba que el evento de borrado se publica una sola vez. Ejecuta el build, pasa el diff al revisor y muéstrame los resultados.
 
 El orden propuesto permite borrar aunque falte la clave en Redis. La invalidación evita que un listado posterior devuelva una cuenta que ya se borró. Para el ejercicio, reutiliza los adaptadores locales del servicio.

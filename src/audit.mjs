@@ -35,9 +35,6 @@ export async function validateAudit(repo, audit) {
       requireValue(lines.slice(item.startLine - 1, item.endLine).join('\n').includes(item.quote.replaceAll('\r\n', '\n')), `Cita inexistente: ${item.file}:${item.startLine}`);
     }
   }
-  let readContract;
-  try { ({readContract} = await import('../editor/dist/contracts-core.mjs')); }
-  catch { throw new Error('Prepara el núcleo de contratos: npm --prefix editor run build'); }
   const revisions = new Map();
   const endpoints = [];
   const endpointIds = new Set();
@@ -54,11 +51,7 @@ export async function validateAudit(repo, audit) {
     requireValue(endpoint.evidence.some(item => entry.handlerCandidates.some(handler => handler.file === item.file && item.startLine <= handler.endLine && item.endLine >= handler.startLine)), `Falta evidencia del handler Java: ${endpoint.id}`);
     requireValue(endpoint.contract && nonempty(endpoint.contract.file), 'Contrato requerido.');
     const snapshot = await source(endpoint.contract.file, endpoint.contract.sha256);
-    const sha256 = hash(snapshot);
-    const revision = {apiId: `api-${hash(endpoint.contract.file).slice(0, 16)}`, revisionId: `sha256:${sha256}`, sha256, format: path.extname(endpoint.contract.file).toLowerCase() === '.json' ? 'json' : 'yaml', snapshot};
-    const contract = readContract(revision);
-    const operation = contract.operations.find(item => item.ref.method.toUpperCase() === endpoint.method && item.ref.path === endpoint.path);
-    requireValue(operation, `Operación ausente en contrato: ${routeKey}`);
+    const {revision, operationRef} = await contractSnapshot(endpoint.contract.file, snapshot, endpoint.method, endpoint.path);
     revisions.set(`${revision.apiId}:${revision.revisionId}`, revision);
     requireValue(Array.isArray(endpoint.dependencies) && Array.isArray(endpoint.steps) && Array.isArray(endpoint.findings), 'dependencies, steps y findings deben ser arrays.');
     const ids = new Set([endpoint.id]);
@@ -77,13 +70,24 @@ export async function validateAudit(repo, audit) {
       requireValue(['info', 'warning', 'error'].includes(finding.severity) && nonempty(finding.claim), 'Hallazgo requiere severity y claim.');
       await evidence(finding.evidence, finding.claim);
     }
-    endpoints.push({...endpoint, operationRef: operation.ref});
+    endpoints.push({...endpoint, operationRef});
   }
   // Detect edits while validating. The output describes exactly these source bytes.
   for (const [file, content] of contents) {
     requireValue(hash(await readFile(await sourcePath(repo, file), 'utf8')) === hash(content), `Fuente cambió durante validación: ${file}`);
   }
   return {...audit, endpoints, registry: {version: 2, revisions: [...revisions.values()]}, git: inventory.git, limitations: inventory.limitations};
+}
+
+export async function contractSnapshot(file, snapshot, method, route) {
+  let readContract;
+  try { ({readContract} = await import('../editor/dist/contracts-core.mjs')); }
+  catch { throw new Error('Prepara el núcleo de contratos: npm --prefix editor run build'); }
+  const sha256 = hash(snapshot);
+  const revision = {apiId: `api-${hash(file).slice(0, 16)}`, revisionId: `sha256:${sha256}`, sha256, format: path.extname(file).toLowerCase() === '.json' ? 'json' : 'yaml', snapshot};
+  const operation = readContract(revision).operations.find(item => item.ref.method.toUpperCase() === method && item.ref.path === route);
+  requireValue(operation, `Operación ausente en contrato: ${method} ${route}`);
+  return {revision, operationRef: operation.ref};
 }
 
 const xml = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&apos;').replaceAll('\n', '&#10;').replaceAll('\r', '&#13;');
@@ -115,9 +119,11 @@ export function renderDrawio(audit, {layout, type = 'components'} = {}) {
       const style = sequence ? 'shape=umlLifeline;size=56' : shape;
       return `<object ${attr({id, label, ...metadata})}><mxCell vertex="1" parent="1" style="${style};whiteSpace=wrap;html=0;fillColor=${fill};strokeColor=#64748b;fontSize=14;"><mxGeometry x="${x}" y="${y}" width="200" height="${height}" as="geometry"/></mxCell></object>`;
     }
-    const evidence = entries => ({version: 1, entries, revision: audit.git.revision, fingerprint: audit.repositoryFingerprint});
+    const sourceMetadata = item => audit.design
+      ? {designDecisions: item.decisions}
+      : {auditEvidence: {version: 1, entries: item.evidence, revision: audit.git.revision, fingerprint: audit.repositoryFingerprint}};
     const endpointLabel = `${endpoint.title || audit.service}\n${endpoint.method} ${endpoint.path}`;
-    const endpointMetadata = {contractRef: endpoint.operationRef, contractState: 'linked', auditEvidence: evidence(endpoint.evidence), auditFlow: flow};
+    const endpointMetadata = {contractRef: endpoint.operationRef, contractState: 'linked', ...sourceMetadata(endpoint), auditFlow: flow};
     const components = {
       api: ['#f1f5f9', 'rounded=1'], service: ['#dbeafe', 'shape=component'],
       cache: ['#fee2e2', 'shape=cylinder3;size=15'], database: ['#dcfce7', 'shape=cylinder3;size=15'],
@@ -135,7 +141,7 @@ export function renderDrawio(audit, {layout, type = 'components'} = {}) {
     const cells = [vertex(endpoint.id, endpointLabel, ...positions[endpoint.id], '#dae8fc', endpointMetadata, 'shape=component')];
     endpoint.dependencies.forEach((dep, i) => {
       const [fill, shape] = components[dep.kind];
-      cells.push(vertex(dep.id, dep.label, ...positions[dep.id], fill, {auditEvidence: evidence(dep.evidence)}, shape));
+      cells.push(vertex(dep.id, dep.label, ...positions[dep.id], fill, sourceMetadata(dep), shape));
     });
     endpoint.steps.forEach((step, i) => {
       const response = step.direction === 'response';
@@ -145,12 +151,12 @@ export function renderDrawio(audit, {layout, type = 'components'} = {}) {
       const labelOffset = layout?.labelOffsets?.[i];
       const offset = labelOffset ? `<mxPoint x="${labelOffset[0]}" y="${labelOffset[1]}" as="offset"/>` : '';
       const routing = sequence ? 'exitPerimeter=0;entryPerimeter=0;' : 'edgeStyle=orthogonalEdgeStyle;rounded=1;';
-      cells.push(`<object ${attr({id: `__audit_edge_${i}`, label, auditEvidence: evidence(step.evidence)})}><mxCell edge="1" parent="1" source="${xml(step.from)}" target="${xml(step.to)}" style="${routing}html=0;endArrow=block;labelBackgroundColor=#ffffff;${ports}strokeColor=${response ? '#15803d' : '#2563eb'};${response ? 'dashed=1;' : ''}"><mxGeometry relative="1" as="geometry">${offset}</mxGeometry></mxCell></object>`);
+      cells.push(`<object ${attr({id: `__audit_edge_${i}`, label, ...sourceMetadata(step)})}><mxCell edge="1" parent="1" source="${xml(step.from)}" target="${xml(step.to)}" style="${routing}html=0;endArrow=block;labelBackgroundColor=#ffffff;${ports}strokeColor=${response ? '#15803d' : '#2563eb'};${response ? 'dashed=1;' : ''}"><mxGeometry relative="1" as="geometry">${offset}</mxGeometry></mxCell></object>`);
     });
     const bottom = sequence ? 250 + endpoint.steps.length * 48 : Math.max(...Object.values(positions).map(([, y]) => y)) + 160;
-    endpoint.findings.forEach((finding, i) => cells.push(vertex(`__audit_finding_${i}`, `${finding.severity.toUpperCase()}\n${finding.claim}`, 80 + (i % 3) * 340, bottom + Math.floor(i / 3) * 140, '#fff2cc', {auditEvidence: evidence(finding.evidence)})));
+    endpoint.findings.forEach((finding, i) => cells.push(vertex(`__audit_finding_${i}`, `${finding.severity.toUpperCase()}\n${finding.claim}`, 80 + (i % 3) * 340, bottom + Math.floor(i / 3) * 140, '#fff2cc', sourceMetadata(finding))));
     if (!layout) cells.push(vertex('__audit_scope', 'Análisis estático con evidencia de código.\nLa animación explica pasos descritos en la auditoría.', 80, bottom + Math.ceil(endpoint.findings.length / 3) * 140, '#f5f5f5'));
-    return `<diagram ${attr({id: endpoint.id, name: `${endpoint.method} ${endpoint.path}`})}><mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>${cells.join('')}</root></mxGraphModel></diagram>`;
+    return `<diagram ${attr({id: endpoint.id, name: endpoint.pageName ?? `${endpoint.method} ${endpoint.path}`})}><mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>${cells.join('')}</root></mxGraphModel></diagram>`;
   });
   return `<?xml version="1.0" encoding="UTF-8"?>\n<mxfile ${attr({host: 'Backend Copilot', contractsRegistry: audit.registry})}>${pages.join('')}</mxfile>\n`;
 }

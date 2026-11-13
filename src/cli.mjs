@@ -6,16 +6,24 @@ import {writeJson, atomicWrite, projectRoot} from './io.js';
 import {validateAudit, renderDrawio} from './audit.mjs';
 import {openLocal} from './delivery.js';
 import {demoAudit, demoOverviewAudit, overviewLayout} from './demo.mjs';
+import {designDelete} from './delete-design.mjs';
 
 try {
   const {positionals, values} = parseArgs({allowPositionals: true, options: {repo: {type: 'string'}, input: {type: 'string'}, out: {type: 'string'}, open: {type: 'boolean'}, 'editor-url': {type: 'string'}, 'diagram-type': {type: 'string'}}});
   const command = positionals[0];
-  if (positionals.length !== 1) throw new Error('Uso: node src/cli.mjs discover|render|demo|demo-overview [opciones]');
+  if (positionals.length !== 1) throw new Error('Uso: node src/cli.mjs discover|render|demo|demo-overview|design-delete [opciones]');
   const overview = command === 'demo-overview';
   const demo = command === 'demo' || overview;
   const repo = values.repo || (demo ? path.join(projectRoot, 'examples/account-service') : undefined);
   if (!repo) throw new Error('--repo es requerido.');
-  if (command === 'discover') {
+  if (command === 'design-delete') {
+    if (!values.input || !values.out) throw new Error('design-delete requiere --input <respuestas.json> y --out <directorio>.');
+    if (values['diagram-type'] && values['diagram-type'] !== 'components') throw new Error('design-delete genera un diagrama de componentes.');
+    const answers = JSON.parse(await readFile(values.input, 'utf8'));
+    const {output, content} = await designDelete(repo, answers, values.out);
+    console.log(JSON.stringify({status: 'proposed', output}));
+    if (values.open) await openLocal(content, {url: values['editor-url'], log: console.error});
+  } else if (command === 'discover') {
     const inventory = await discover(repo);
     if (values.out) await writeJson(path.resolve(values.out), inventory);
     else process.stdout.write(`${JSON.stringify(inventory, null, 2)}\n`);
