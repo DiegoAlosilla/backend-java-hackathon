@@ -4,13 +4,26 @@
 
 ## Demo del agente auditor
 
-> Audita este microservicio. Muéstrame los endpoints, el recorrido hacia Redis, la base de datos y el tópico, y las citas del código en un diagrama de componentes.
-
 El GIF muestra el formato del auditor. En el ejemplo de saldo, Cuentas lee Redis, solicita el dato a otro microservicio, publica en Kafka y actualiza la caché antes de devolver `200`. [Ver el flujo y descargar el diagrama](examples/README.md#recorrido-por-redis-saldos-bd-y-kafka)
 
 ![GIF del fork de Draw.io que reproduce las diez conexiones del diagrama de componentes hasta responder HTTP 200](docs/images/drawio-flujo-componentes.gif)
 
 Para una demo de principio a fin, levanta el **CRUD de cuentas**. Audita el registro y el listado existentes, pide implementar `DELETE`, ejecuta las pruebas y vuelve a diagramar el endpoint nuevo. Usa Quarkus y adaptadores locales en memoria para Redis, BD y Kafka. [Guion de la demo CRUD](examples/accounts-crud/README.md)
+
+## Cómo audita el agente el CRUD
+
+Abre `examples/accounts-crud` en VS Code, selecciona `backend-java` en Copilot y copia esta petición.
+
+> Audita el estado actual del CRUD de cuentas. Revisa `POST /accounts` y `GET /accounts`, contrasta su implementación con OpenAPI e identifica qué operaciones faltan. Para el registro, muestra la escritura en base de datos, la actualización de Redis y la publicación del evento. Para el listado, prepara un recorrido cuando la lista está en caché y otro cuando hay que consultar la base de datos. Cita los archivos y líneas que respaldan cada paso. Genera los diagramas de componentes, ábrelos en mi fork de Draw.io y pasa la evidencia al revisor.
+
+1. **Descubre los endpoints.** Localiza los handlers Java de registro y listado, los vincula con OpenAPI e indica que faltan actualizar y eliminar.
+2. **Sigue el registro.** Rastrea cómo el servicio inserta en la base de datos, guarda la cuenta en Redis, invalida la lista cacheada y publica `accounts.registered` antes de devolver `201`.
+3. **Reconstruye las dos ramas del listado.** Si encuentra la lista en Redis, el servicio la devuelve directamente. Si falta, consulta la base de datos, guarda la lista en Redis y devuelve `200`.
+4. **Recoge y valida la evidencia.** Registra los archivos, líneas y fragmentos que sustentan las llamadas y respuestas. El CLI comprueba las citas y el contrato contra los archivos actuales.
+5. **Genera y abre los diagramas.** El especialista en diagramación convierte la auditoría en archivos `.drawio` editables con bloques para el endpoint y sus dependencias, y conexiones numeradas en el orden del recorrido. Abre el resultado en el fork local.
+6. **Revisa y entrega.** El revisor contrasta los recorridos con el código y el contrato. `backend-java` entrega los diagramas y señala los límites del análisis.
+
+En Draw.io, selecciona el bloque del endpoint para ver **Contratos** y pulsa **Reproducir** en **Evidencia y recorrido**. El guion incluye el arranque y los comandos para generar los diagramas de referencia. [Auditoría inicial del CRUD](examples/accounts-crud/README.md#2-pide-la-auditoría-inicial)
 
 ## Cómo trabaja el agente al agregar un endpoint
 
