@@ -12,7 +12,6 @@ import {projectRoot, readJson} from './io.js';
 const exec = promisify(execFile);
 const demoRepo = 'https://github.com/DiegoAlosilla/business-contracts-demo.git';
 const demoPath = path.join(projectRoot, 'runs', 'business-contracts-demo');
-const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 async function ensureDemo() {
   if (await stat(path.join(demoPath, '.git')).catch(() => null)) return demoPath;
@@ -21,11 +20,13 @@ async function ensureDemo() {
   return demoPath;
 }
 
-function npmRun(args, env = process.env) {
+function startEditor(repo) {
   return new Promise((resolve, reject) => {
-    const processHandle = spawn(npm, args, {cwd: projectRoot, env, stdio: 'inherit', shell: process.platform === 'win32'});
+    const cwd = path.join(projectRoot, 'editor');
+    const env = {...process.env, CHANNEL_CONTRACTS_DIR: path.resolve(repo)};
+    const processHandle = spawn(process.execPath, ['scripts/start.mjs'], {cwd, env, stdio: 'inherit'});
     processHandle.once('error', reject);
-    processHandle.once('close', code => code === 0 ? resolve() : reject(new Error(`npm terminó con código ${code}.`)));
+    processHandle.once('close', (code, signal) => code === 0 ? resolve() : reject(new Error(`El editor terminó con ${signal ?? `código ${code}`}.`)));
   });
 }
 
@@ -42,7 +43,7 @@ async function main() {
   const repo = values.repo || defaultCatalogPath();
   if (command === 'editor') {
     const root = values.repo || process.env.CHANNEL_CONTRACTS_DIR || await ensureDemo();
-    await npmRun(['--prefix', 'editor', 'start'], {...process.env, CHANNEL_CONTRACTS_DIR: path.resolve(root)});
+    await startEditor(root);
   } else if (command === 'search' || command === 'operation') {
     if (repo === demoPath) await ensureDemo();
     const catalog = await channelCatalog(repo, values.ref);
