@@ -10,7 +10,7 @@ El agente estudia el servicio, presenta el plan, actualiza el contrato, implemen
 
 Si también pides una vista visual, puedes abrir el endpoint con su contrato, las citas del código y el recorrido. En la demo de componentes, el microservicio Cuentas lee Redis, solicita el saldo a otro microservicio, publica en Kafka y actualiza la caché antes de devolver `200`. [Ver el flujo de componentes](examples/README.md#recorrido-por-redis-saldos-bd-y-kafka)
 
-![Captura del diagrama de componentes en Draw.io con Redis resaltado en el paso 9, antes de responder HTTP 200](docs/images/drawio-flujo-completo.png)
+![GIF del fork de Draw.io que reproduce las diez conexiones del diagrama de componentes hasta responder HTTP 200](docs/images/drawio-flujo-componentes.gif)
 
 ## Componentes
 

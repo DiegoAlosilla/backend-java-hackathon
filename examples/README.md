@@ -51,19 +51,11 @@ Las pruebas unitarias del servicio ficticio se ejecutan con `mvn -f examples/acc
 3. **Valida y genera el diagrama.** El CLI comprueba que las citas y los hashes correspondan al código actual. Genera un `.drawio` editable con el contrato y el recorrido documentado.
 4. **Revisa y entrega la auditoría.** El revisor contrasta las afirmaciones con sus fuentes. Recibes el diagrama, el resumen y los límites del análisis.
 
-### Capturas de la demo en Draw.io
+### Contrato y evidencia en Draw.io
 
-**Contrato.** Al seleccionar el endpoint de saldo, Swagger muestra las respuestas `200` y `204` declaradas en OpenAPI.
+El GIF muestra las respuestas `200` y `204` en Swagger, cómo desplegar una cita del handler y cómo reproducir la rama que devuelve `204`.
 
-![Respuestas 200 y 204 del endpoint de saldo en el panel Swagger del fork](../docs/images/drawio-contrato.png)
-
-**Evidencia.** El panel muestra la revisión analizada. Al desplegar una cita, ves el archivo, las líneas, el fragmento y su hash.
-
-![Cita del handler AccountsResource desplegada en el panel de evidencia](../docs/images/drawio-evidencia.png)
-
-**Recorrido.** En el segundo paso de la reproducción, la marca verde señala la respuesta `204` en el lienzo.
-
-![Paso 2 de 2 de la reproducción, con la respuesta 204 resaltada en verde](../docs/images/drawio-recorrido.png)
+![GIF del fork de Draw.io con Swagger, una cita del código y la reproducción de la respuesta 204](../docs/images/drawio-contrato-evidencia.gif)
 
 ## Recorrido por Redis, Saldos, BD y Kafka
 
@@ -75,7 +67,7 @@ Las pruebas unitarias del servicio ficticio se ejecutan con `mvn -f examples/acc
 4. **Actualiza Redis.** Cuentas guarda o reemplaza el saldo con un TTL de 300 segundos.
 5. **Responde al cliente.** Cuentas devuelve `HTTP 200` con el saldo después de actualizar la caché.
 
-![Captura real del fork de Draw.io con los seis componentes, sus conexiones y la escritura en Redis resaltada](../docs/images/drawio-flujo-completo.png)
+![GIF del fork de Draw.io con el recorrido completo entre los componentes, desde la consulta a Redis hasta HTTP 200](../docs/images/drawio-flujo-componentes.gif)
 
 [Descargar el diagrama editable](overview/overview.drawio). Con el fork iniciado, `node src/cli.mjs demo-overview --open` regenera el diagrama y lo abre. Selecciona el componente **Cuentas** y pulsa **Reproducir** para avanzar por las diez conexiones.
 
