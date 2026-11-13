@@ -1,0 +1,24 @@
+openapi: 3.0.3
+info:
+  title: Cuenta ficticia para demo
+  version: 1.0.0
+paths:
+  /accounts/{id}/balance:
+    get:
+      operationId: balance
+      summary: Consultar saldo de la cuenta de demostración
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Saldo disponible
+          content:
+            application/json:
+              schema:
+                type: integer
+        '204':
+          description: Ausencia de saldo sin cuerpo

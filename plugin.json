@@ -1,0 +1,14 @@
+{
+  "name": "backend-java-hackathon",
+  "description": "Orquestador backend Java, especialistas y revisión independiente con auditoría visual en Draw.io.",
+  "version": "0.9.0",
+  "agents": "./agents",
+  "skills": "./skills",
+  "keywords": [
+    "java",
+    "quarkus",
+    "karate",
+    "backend",
+    "copilot"
+  ]
+}

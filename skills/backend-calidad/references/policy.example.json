@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "minInstructionPercent": 95,
+  "mavenCommands": [
+    { "name": "build-completo", "arguments": ["clean", "install"] }
+  ],
+  "testReportDirectories": ["target/surefire-reports"],
+  "checkstyleReports": ["target/checkstyle-result.xml"],
+  "coverageReports": ["target/site/jacoco/jacoco.xml"],
+  "acceptance": [
+    {
+      "id": "AC-01",
+      "classname": "com.example.ErrorMapperTest",
+      "test": "returnsNoContentWhenBusinessReportsAbsence"
+    }
+  ]
+}
