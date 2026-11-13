@@ -22,3 +22,20 @@ paths:
                 type: integer
         '204':
           description: Ausencia de saldo sin cuerpo
+  /accounts/{id}/overview:
+    get:
+      operationId: overview
+      summary: Consultar el saldo con caché
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Saldo de la cuenta
+          content:
+            application/json:
+              schema:
+                type: integer
