@@ -2,7 +2,7 @@
 
 Instala el plugin desde el clon y selecciona `backend-java` en Copilot. Usa el [servicio ficticio de cuentas](account-service/) para practicar. La [guía de instalación](../docs/copilot.md) describe cómo habilitar el plugin y comprobar la delegación.
 
-[Agregar un endpoint](#agregar-un-endpoint) · [Revisar un cambio](#revisar-un-cambio) · [Auditar un endpoint](#auditar-un-endpoint) · [Pedidos por habilidad](#pedidos-por-habilidad)
+[Agregar un endpoint](#agregar-un-endpoint) · [Revisar un cambio](#revisar-un-cambio) · [Auditar un endpoint](#auditar-un-endpoint) · [Recorrido de componentes](#recorrido-por-redis-saldos-bd-y-kafka) · [Pedidos por habilidad](#pedidos-por-habilidad)
 
 ## Demo reproducible
 
@@ -64,6 +64,22 @@ Las pruebas unitarias del servicio ficticio se ejecutan con `mvn -f examples/acc
 **Recorrido.** En el segundo paso de la reproducción, la marca verde señala la respuesta `204` en el lienzo.
 
 ![Paso 2 de 2 de la reproducción, con la respuesta 204 resaltada en verde](../docs/images/drawio-recorrido.png)
+
+## Recorrido por Redis, Saldos, BD y Kafka
+
+> Audita `GET /accounts/{id}/overview`. Muestra el caso en que falta la clave en Redis, la consulta al microservicio de Saldos y a la base de datos, la publicación del evento y la actualización de Redis antes de devolver el saldo. Abre el recorrido en un diagrama de componentes con el contrato y las citas del código.
+
+1. **Consulta Redis.** Cuentas recibe la petición y busca `account:overview:{id}`. Si encuentra el saldo, lo devuelve directamente. La reproducción muestra la rama con clave ausente.
+2. **Recupera el saldo.** Cuentas llama al microservicio Saldos, que consulta su base de datos y devuelve el resultado.
+3. **Publica el evento.** Cuentas envía el resultado al tópico `account.overview.loaded` en Kafka.
+4. **Actualiza Redis.** Cuentas guarda o reemplaza el saldo con un TTL de 300 segundos.
+5. **Responde al cliente.** Cuentas devuelve `HTTP 200` con el saldo después de actualizar la caché.
+
+![Captura real del fork de Draw.io con los seis componentes, sus conexiones y la escritura en Redis resaltada](../docs/images/drawio-flujo-completo.png)
+
+[Descargar el diagrama editable](overview/overview.drawio). Con el fork iniciado, `node src/cli.mjs demo-overview --open` regenera el diagrama y lo abre. Selecciona el componente **Cuentas** y pulsa **Reproducir** para avanzar por las diez conexiones.
+
+El ejemplo usa código Java y adaptadores de demostración para Redis, Saldos, base de datos y Kafka. La reproducción muestra el flujo respaldado por las citas del código.
 
 ## Pedidos por habilidad
 
