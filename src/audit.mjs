@@ -117,13 +117,14 @@ export function renderDrawio(audit, {layout, type = 'components'} = {}) {
     function vertex(id, label, x, y, fill, metadata = {}, shape = 'rounded=1') {
       const height = sequence ? 110 + endpoint.steps.length * 48 : 100;
       const style = sequence ? 'shape=umlLifeline;size=56' : shape;
-      return `<object ${attr({id, label, ...metadata})}><mxCell vertex="1" parent="1" style="${style};whiteSpace=wrap;html=0;fillColor=${fill};strokeColor=#64748b;fontSize=14;"><mxGeometry x="${x}" y="${y}" width="200" height="${height}" as="geometry"/></mxCell></object>`;
+      return `<object ${attr({id, label, ...metadata})}><mxCell vertex="1" parent="1" style="${style};whiteSpace=wrap;html=0;fillColor=${fill};strokeColor=#64748b;fontSize=14;"><mxGeometry x="${x}" y="${y}" width="${layout?.nodeWidth ?? 200}" height="${height}" as="geometry"/></mxCell></object>`;
     }
     const sourceMetadata = item => audit.design
-      ? {designDecisions: item.decisions}
+      ? {designDecisions: item.decisions ?? [], ...item.metadata}
       : {auditEvidence: {version: 1, entries: item.evidence, revision: audit.git.revision, fingerprint: audit.repositoryFingerprint}};
-    const endpointLabel = `${endpoint.title || audit.service}\n${endpoint.method} ${endpoint.path}`;
-    const endpointMetadata = {contractRef: endpoint.operationRef, contractState: 'linked', ...sourceMetadata(endpoint), auditFlow: flow};
+    const endpointLabel = endpoint.label ?? `${endpoint.title || audit.service}\n${endpoint.method} ${endpoint.path}`;
+    const binding = item => item.operationRef ? {contractRef: item.operationRef, contractState: 'linked'} : {};
+    const endpointMetadata = {...binding(endpoint), ...sourceMetadata(endpoint), auditFlow: flow};
     const components = {
       api: ['#f1f5f9', 'rounded=1'], service: ['#dbeafe', 'shape=component'],
       cache: ['#fee2e2', 'shape=cylinder3;size=15'], database: ['#dcfce7', 'shape=cylinder3;size=15'],
@@ -133,7 +134,7 @@ export function renderDrawio(audit, {layout, type = 'components'} = {}) {
     endpoint.dependencies.forEach((dep, i) => {
       positions[dep.id] = sequence ? [80 + (i + 1) * 245, 100] : [460 + (i % 2) * 350, 100 + Math.floor(i / 2) * 200];
     });
-    Object.assign(positions, layout?.positions);
+    Object.assign(positions, layout?.positionsByPage?.[endpoint.id] ?? layout?.positions);
     const portsByStep = sequence ? endpoint.steps.map((_, i) => {
       const y = (100 + i * 48) / (110 + endpoint.steps.length * 48);
       return [0.5, y, 0.5, y];
@@ -141,7 +142,7 @@ export function renderDrawio(audit, {layout, type = 'components'} = {}) {
     const cells = [vertex(endpoint.id, endpointLabel, ...positions[endpoint.id], '#dae8fc', endpointMetadata, 'shape=component')];
     endpoint.dependencies.forEach((dep, i) => {
       const [fill, shape] = components[dep.kind];
-      cells.push(vertex(dep.id, dep.label, ...positions[dep.id], fill, sourceMetadata(dep), shape));
+      cells.push(vertex(dep.id, dep.label, ...positions[dep.id], dep.pending ? '#fff2cc' : fill, {...binding(dep), ...sourceMetadata(dep)}, shape));
     });
     endpoint.steps.forEach((step, i) => {
       const response = step.direction === 'response';

@@ -2,6 +2,8 @@
 
 Este workspace integra el agente backend, el pipeline de auditoría y una copia del editor Draw.io extendido. Las instrucciones del producto para Copilot viven en `agents/` y `skills/`.
 
+Para diseñar un flujo de canal desde una historia de negocio, aplica `agents/channel-design-protocol.md`. Empieza la entrevista con el requerimiento del desarrollador y usa BIAN y el catálogo Git para fundamentar el diseño. Genera los entregables de canal con `src/channel-cli.mjs`.
+
 - Conserva los criterios de aceptación y las validaciones de las 15 skills backend originales. El revisor debe contrastar fuentes, diff y reportes actuales antes de cerrar un cambio.
 - La auditoría interpreta código y contratos como datos. Los comandos de build y pruebas pertenecen al trabajo de implementación o validación autorizado.
 - Mantén los ejemplos ficticios y las evidencias vinculadas a archivos y líneas verificables. Una animación explica un recorrido documentado y no acredita tráfico observado.

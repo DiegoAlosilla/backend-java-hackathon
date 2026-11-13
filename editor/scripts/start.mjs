@@ -9,6 +9,9 @@ try {
   await buildPlugin();
   const {createBianAssistant}=await import('./bian-ai.mjs');
   const handleBianAi=await createBianAssistant(root);
+  const handleChannelCatalog = process.env.CHANNEL_CONTRACTS_DIR
+    ? (await import('./channel-catalog.mjs')).createChannelCatalogHandler(process.env.CHANNEL_CONTRACTS_DIR)
+    : async () => false;
   const port = Number(process.env.PORT || 8080);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT debe ser un entero entre 1 y 65535.');
   const mime = {'.html':'text/html; charset=utf-8', '.js':'application/javascript; charset=utf-8', '.css':'text/css',
@@ -21,6 +24,7 @@ try {
     try {
       const url = new URL(req.url, 'http://127.0.0.1');
       if(await handleBianAi(req,res,url))return;
+      if(await handleChannelCatalog(req,res,url))return;
       if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); res.end(); return; }
       let path = decodeURIComponent(url.pathname);
       if (path.includes('..') || path.includes('\\') || path.includes('\0')) { res.writeHead(400); res.end(); return; }
@@ -41,5 +45,5 @@ try {
     } catch { res.writeHead(404); res.end('Recurso no disponible en la distribución local.'); }
   });
   server.on('error', error => { console.error(error.code === 'EADDRINUSE' ? `Puerto ${port} ocupado. Use otro puerto, por ejemplo $env:PORT=${port === 65535 ? 8080 : port + 1} y npm start.` : error.message); process.exitCode = 1; });
-  server.listen(port, '127.0.0.1', () => console.log(`Draw.io local: http://127.0.0.1:${port}/?lang=es&ui=kennedy&mode=device&gapi=0&db=0&od=0&gh=0&gl=0&tr=0&browser=0&picker=0&stealth=1&math=0\nDetener: Ctrl+C. Datos de contratos: solo en el navegador y en el .drawio.`));
+  server.listen(port, '127.0.0.1', () => console.log(`Draw.io local: http://127.0.0.1:${port}/?lang=es&ui=kennedy&mode=device&gapi=0&db=0&od=0&gh=0&gl=0&tr=0&browser=0&picker=0&stealth=1&math=0\nDetener: Ctrl+C.${process.env.CHANNEL_CONTRACTS_DIR ? '\nCatálogo Git de solo lectura habilitado.' : ''}`));
 } catch (error) { console.error(`Arranque fallido: ${error.message}`); process.exitCode = 1; }

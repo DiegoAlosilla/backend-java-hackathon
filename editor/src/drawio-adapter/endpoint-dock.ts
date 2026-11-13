@@ -3,7 +3,10 @@ import type {CatalogHandlers} from '../catalog/view';
 import {contractStyles,el} from '../ui/styles';
 import {readContract} from '../contracts/import';
 import type {ContractModel,OperationView} from '../contracts/types';
-import {readRegistry,findRevision,REF_ATTRIBUTE,REGISTRY_ATTRIBUTE} from '../persistence/registry';
+import {addRevision,readRegistry,findRevision,REF_ATTRIBUTE,REGISTRY_ATTRIBUTE} from '../persistence/registry';
+import {DRAFTS_ATTRIBUTE,assertDraftDocumentBudget} from '../persistence/drafts';
+import type {Revision} from '../model/types';
+import {RegistryAttributeChange} from './registry-change';
 import {contractCell,selectionContractTarget} from './component-figure';
 import {BIAN_REF_ATTRIBUTE} from '../bian/reference';
 import {insertBianFigure} from './bian-figure';
@@ -30,7 +33,27 @@ export function installEndpointDock(ui:any):EndpointDock{
     return target instanceof HTMLTextAreaElement&&root.contains(target)||isSelectionAllowed.call(this,event);
   };
   let handlers:CatalogHandlers={insert:()=>{},bindDrag:()=>{}};
-  const browser=apiBrowser({insert:(...args)=>handlers.insert(...args),insertAll:contract=>handlers.insertAll?.(contract),bindDrag:(...args)=>handlers.bindDrag(...args)},()=>ui.actions.get('contractsImport').funct(),reference=>{const cell=insertBianFigure(ui,reference);suppressSelection=true;try{graph.setSelectionCell(cell);graph.scrollCellToVisible(cell);}finally{suppressSelection=false;}});root.append(browser.element);
+  const browser=apiBrowser({insert:(...args)=>handlers.insert(...args),insertAll:contract=>handlers.insertAll?.(contract),bindDrag:(...args)=>handlers.bindDrag(...args)},()=>ui.actions.get('contractsImport').funct(),reference=>{const cell=insertBianFigure(ui,reference);suppressSelection=true;try{graph.setSelectionCell(cell);graph.scrollCellToVisible(cell);}finally{suppressSelection=false;}},async(raw,match)=>{
+    const node=ui.fileNode;
+    if(!node)throw Error('Cree o abra un diagrama antes de consultar el contrato.');
+    const revision=raw as Revision;
+    const before=node.getAttribute(REGISTRY_ATTRIBUTE),current=readRegistry(before);
+    const bytes=new TextEncoder().encode(revision.snapshot);
+    const sha256=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),byte=>byte.toString(16).padStart(2,'0')).join('');
+    if(sha256!==revision.sha256||sha256!==match.sha256||revision.revisionId!==`sha256:${sha256}`)throw Error('El contrato descargado no coincide con la revisión consultada.');
+    if(ui.fileNode!==node||node.getAttribute(REGISTRY_ATTRIBUTE)!==before)throw Error('El documento cambió durante la consulta.');
+    const existing=current.revisions.find(item=>item.sha256===sha256);
+    const contract=readContract(existing??revision);
+    const operation=contract.operations.find(item=>item.ref.method.toUpperCase()===match.method&&item.ref.path===match.path);
+    if(!operation)throw Error('La operación elegida no existe en el contrato.');
+    if(!existing){
+      const updated=addRevision({...current,version:2},revision);
+      assertDraftDocumentBudget(node.getAttribute(DRAFTS_ATTRIBUTE),updated);
+      const model=graph.getModel();model.beginUpdate();
+      try{model.execute(new RegistryAttributeChange(node,JSON.stringify(updated)));}finally{model.endUpdate();}
+    }
+    browser.select(contract,operation,true);
+  });root.append(browser.element);
   let active=false,tab:HTMLElement|undefined,customContent:HTMLElement|undefined,suppressSelection=false;
   let cachedRaw:string|null|undefined,cachedNode:any,contracts:ContractModel[]=[];
   const resizer=el('div','','ct-contracts-resizer');resizer.tabIndex=0;resizer.title='Arrastra para ajustar el ancho · Flechas para ajustar con teclado';resizer.setAttribute('role','separator');resizer.setAttribute('aria-label','Ancho del panel de contratos');resizer.setAttribute('aria-orientation','vertical');

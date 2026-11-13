@@ -49,6 +49,7 @@ export function installAuditPanel(ui: any, root: HTMLElement): void {
     const state = cell && graph.view.getState(cell);
     const color = step.direction === 'response' ? '#14804a' : '#1769e0';
     if (!highlight && state) {
+      if (selected && graph.getAttributeForCell(selected, 'designChannel', '') === '1') graph.scrollCellToVisible(cell);
       highlight = new mxCellHighlight(graph, color, 4);
       highlight.highlight(state);
     }
@@ -111,6 +112,8 @@ export function installAuditPanel(ui: any, root: HTMLElement): void {
     const evidenceRaw = cell && graph.getAttributeForCell(cell, 'auditEvidence', '');
     const flowRaw = cell && graph.getAttributeForCell(cell, 'auditFlow', '');
     const designRaw = cell && graph.getAttributeForCell(cell, 'designDecisions', '');
+    const bianRaw = cell && graph.getAttributeForCell(cell, 'designBian', '');
+    const sourceRaw = cell && graph.getAttributeForCell(cell, 'contractSource', '');
     panel.hidden = !evidenceRaw && !flowRaw && !designRaw;
     if (panel.hidden) return;
     panel.append(text('h3', designRaw ? 'Diseño propuesto · recorrido y criterios' : 'Evidencia y recorrido'));
@@ -156,6 +159,14 @@ export function installAuditPanel(ui: any, root: HTMLElement): void {
           panel.append(criterion);
         }
       }
+      if (bianRaw) {
+        const bian = JSON.parse(bianRaw);
+        panel.append(text('p', `BIAN ${bian.release} · ${bian.domain} · ${bian.method} ${bian.path}`));
+      }
+      if (sourceRaw) {
+        const source = JSON.parse(sourceRaw);
+        panel.append(text('p', `Contrato Git · ${source.commit} · ${source.file}`));
+      }
       if (evidenceRaw) {
         const evidence = JSON.parse(evidenceRaw);
         if (evidence.version !== 1 || !Array.isArray(evidence.entries) || evidence.entries.length > 500) throw Error('Versión o evidencia no compatible.');
@@ -181,7 +192,8 @@ export function installAuditPanel(ui: any, root: HTMLElement): void {
       cell.value?.getAttribute?.('auditFlow') && cell.value?.getAttribute?.('contractRef'));
     if (endpoint) {
       graph.setSelectionCell(endpoint);
-      graph.fit(30);
+      if (graph.getAttributeForCell(endpoint, 'designChannel', '') === '1') graph.scrollCellToVisible(endpoint);
+      else graph.fit(30);
     }
     render();
   }

@@ -2,6 +2,10 @@
 
 Fecha de inicio: 13 de octubre de 2026 (America/Lima).
 
+## Diseño de canal en Hackathon
+
+El CLI genera spec, OpenAPI UX y un diagrama editable a partir de decisiones y contratos versionados. La demo de préstamo usa un UX, cinco operaciones, siete consumos Business y dos escenarios. La prueba `channel.spec.mjs` comprueba que se indexan los 20 contratos de ejemplo, el buscador abre Swagger, el flujo se anima y la propuesta conserva sus contratos al reabrirse en un perfil limpio. [ADR-015](adr/ADR-015-diseno-canal.md) · [Guía y comandos](../../docs/channel-design.md)
+
 ## Entrega 0 — Comprobada
 
 Estado inicial: solo ADR-001. Windows/PowerShell; Node 24.18.0, npm 11.16.0, Git 2.47.0. Selección fijada: Draw.io v32.4.1, commit `9034053fba80a435e27d68d374bc564b83917ae9` y SHA-256 en `config/drawio-version.json`.

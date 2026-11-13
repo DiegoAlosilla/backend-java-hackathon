@@ -2,6 +2,10 @@
 
 `backend-java` coordina cambios, revisiones y auditorías de microservicios Java desde Copilot. Delega en especialistas de contrato, implementación y pruebas, y pide una revisión independiente antes de entregar.
 
+## Diseñar APIs de canal desde cero
+
+En Codex usa `$canal-diseno` o selecciona `channel-design` en Copilot. Describe el flujo para iniciar la entrevista. El agente usa BIAN y el catálogo de contratos Business en Git para proponer servicios UX, guardar la spec, generar los OpenAPI y abrir el Draw.io animado. [Guía y demo de préstamos](docs/channel-design.md) · [Catálogo público con 20 contratos](https://github.com/DiegoAlosilla/business-contracts-demo)
+
 ## Demo del agente auditor
 
 El GIF muestra el formato del auditor. En el ejemplo de saldo, Cuentas lee Redis, solicita el dato a otro microservicio, publica en Kafka y actualiza la caché antes de devolver `200`. [Ver el flujo y descargar el diagrama](examples/README.md#recorrido-por-redis-saldos-bd-y-kafka)

@@ -2,6 +2,8 @@
 
 Esta copia incluye la integración de auditoría del MVP. Consulta [la guía actual](../docs/editor.md) y [ADR-014](docs/adr/ADR-014-auditoria-hackathon.md) para evidencia y animación. Las secciones siguientes documentan la base heredada.
 
+El asistente de diseño de canal agrega la búsqueda en un catálogo Git cuando se inicia el editor con `npm run channel:editor` desde la raíz. [Guía y demo de préstamos](../docs/channel-design.md) · [ADR-015](docs/adr/ADR-015-diseno-canal.md)
+
 Editor Draw.io real con extensión propia basada en [ADR-001](ADR-001-extension-contratos-drawio.md). **OpenAPI 3.1.x principal, OpenAPI 3.0.x y Swagger 2.0**, JSON/YAML autocontenidos, con [límites explícitos](docs/compatibilidad.md). Etapas técnicas 0–5 comprobadas; piloto de utilidad pendiente. Todos los ejemplos son ficticios. Versión 1.0.0 para el repositorio privado; licencia de publicación pública pendiente.
 
 Notas de la primera versión: [v1.0.0](docs/releases/v1.0.0.md). Índice de toda la documentación: [docs/README.md](docs/README.md). Historial: [CHANGELOG.md](CHANGELOG.md).

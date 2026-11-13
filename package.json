@@ -7,7 +7,10 @@
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "demo": "node src/cli.mjs demo",
-    "editor": "npm --prefix editor start"
+    "editor": "npm --prefix editor start",
+    "channel": "node src/channel-cli.mjs",
+    "channel:editor": "node src/channel-cli.mjs editor",
+    "channel:demo": "node src/channel-cli.mjs demo"
   },
   "dependencies": {"java-parser": "3.0.1", "yaml": "2.9.1"},
   "overrides": {"lodash": "4.18.1", "lodash-es": "4.18.1"}
