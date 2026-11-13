@@ -25,6 +25,20 @@ Abre `examples/accounts-crud` en VS Code, selecciona `backend-java` en Copilot y
 
 En Draw.io, selecciona el bloque del endpoint para ver **Contratos** y pulsa **Reproducir** en **Evidencia y recorrido**. El guion incluye el arranque y los comandos para generar los diagramas de referencia. [Auditoría inicial del CRUD](examples/accounts-crud/README.md#2-pide-la-auditoría-inicial)
 
+## Diseñar DELETE antes de implementar
+
+Abre `examples/accounts-crud` en VS Code, selecciona `backend-java` en Copilot y copia esta petición.
+
+> Diseña `DELETE /accounts/{id}` para el CRUD de cuentas. Pregúntame por las decisiones que falten para armar la spec. Con mis respuestas, genera el OpenAPI propuesto y un diagrama de componentes animado. Ábrelo en nuestro fork de Draw.io para que revise el diseño antes de implementar.
+
+1. **Entiende el CRUD.** Revisa el registro, el listado, el OpenAPI y cómo se usan la base de datos, Redis y el tópico local.
+2. **Aclara las decisiones.** Pregunta qué devolver si la cuenta no existe, si debe validar el ID, en qué orden borrar y limpiar la caché, y qué evento publicar.
+3. **Arma la spec y el contrato.** El agente recoge las respuestas en JSON. El script de Node.js genera `spec.md` con los criterios de aceptación y `openapi.proposed.yaml` con la nueva operación.
+4. **Genera el XML de Draw.io.** El script guarda en `delete.proposed.drawio` las figuras, las conexiones, el orden de la animación, el contrato y los criterios. Cada resultado tiene su propia página. Con las respuestas de la demo, se muestran `204`, `404` y `400`.
+5. **Abre la propuesta para revisión.** En Draw.io puedes ver la operación en Swagger y pulsar **Reproducir** para recorrer el diseño. Después de revisarlo, pídele al agente que aplique la spec al microservicio.
+
+[Ver las preguntas, el JSON de ejemplo y el comando para reproducirlo](docs/delete-design.md)
+
 ## Cómo trabaja el agente al agregar un endpoint
 
 Si le pides **«Agrega un nuevo endpoint a este microservicio»**, `backend-java` coordina este flujo.
@@ -40,8 +54,6 @@ Si le pides **«Agrega un nuevo endpoint a este microservicio»**, `backend-java
 7. **Entrega el resultado.** Resume qué cambió, qué pasó y qué quedó pendiente. Propone la agrupación de commits y espera tu aprobación antes de crearlos.
 
 **Si también pides el diagrama**, el auditor toma el código final y abre el endpoint en tu fork de Draw.io con su contrato Swagger, citas del código y el recorrido animado.
-
-Puedes revisar el diseño antes de que el agente edite el servicio. Pídele que te haga las preguntas para armar la spec de `DELETE` y que abra la propuesta OpenAPI y el diagrama animado. [Diseñar `DELETE` antes de implementar](docs/delete-design.md)
 
 ## Componentes
 
