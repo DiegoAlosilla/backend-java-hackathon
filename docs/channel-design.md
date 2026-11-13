@@ -23,7 +23,7 @@ npm run channel:demo -- --open
 
 El CLI imprime el directorio bajo `runs/channel` con `spec.json`, `spec.md`, `contracts/*.openapi.yaml` y `channel.drawio`. La demo propone un UX con cinco operaciones y siete dependencias Business, con páginas de aprobación y rechazo crediticio. Mantiene abiertas las equivalencias BIAN de evaluación y simulación, y la decisión de conciliación del desembolso.
 
-- En el diagrama, selecciona la primera figura UX y pulsa **Reproducir**. Las etapas se ordenan de arriba abajo, con Frontend, UX y dependencias de izquierda a derecha.
+- En el diagrama, selecciona la primera figura UX y pulsa **Reproducir**. Las capas forman franjas de arriba abajo: Frontend → APIM → MS en AKS → Business / Capa Producto. Las etapas avanzan de izquierda a derecha. Los consumos de cada etapa se ordenan dentro de la franja inferior y las respuestas regresan por APIM.
 - Selecciona un consumo Business para ver en Swagger el método, la ruta, el esquema y la revisión empleada.
 - En **Contratos → Repositorio Business**, busca `desembolso`, `lead`, `CXI` u otro término. Abrir un resultado trae esa revisión al documento y expande la operación seleccionada. Puedes añadir la figura al lienzo desde Swagger.
 - Los contratos de la demo contienen solo definiciones OpenAPI. El reproductor recorre las interacciones diseñadas y el buscador lee Git. Ambos funcionan sin levantar los microservicios de ejemplo.

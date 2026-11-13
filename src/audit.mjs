@@ -113,6 +113,7 @@ function componentPorts(steps, positions) {
 export function renderDrawio(audit, {layout, type = 'components'} = {}) {
   const sequence = type === 'sequence';
   const pages = audit.endpoints.map(endpoint => {
+    const pageLayout = layout?.pages?.[endpoint.id];
     const flow = {version: 1, steps: endpoint.steps.map((step, i) => ({cellId: step.to, edgeId: `__audit_edge_${i}`, direction: step.direction, label: step.label}))};
     function vertex(id, label, x, y, fill, metadata = {}, shape = 'rounded=1') {
       const height = sequence ? 110 + endpoint.steps.length * 48 : 100;
@@ -134,12 +135,14 @@ export function renderDrawio(audit, {layout, type = 'components'} = {}) {
     endpoint.dependencies.forEach((dep, i) => {
       positions[dep.id] = sequence ? [80 + (i + 1) * 245, 100] : [460 + (i % 2) * 350, 100 + Math.floor(i / 2) * 200];
     });
-    Object.assign(positions, layout?.positionsByPage?.[endpoint.id] ?? layout?.positions);
+    Object.assign(positions, pageLayout?.positions ?? layout?.positions);
     const portsByStep = sequence ? endpoint.steps.map((_, i) => {
       const y = (100 + i * 48) / (110 + endpoint.steps.length * 48);
       return [0.5, y, 0.5, y];
-    }) : layout?.ports ?? componentPorts(endpoint.steps, positions);
-    const cells = [vertex(endpoint.id, endpointLabel, ...positions[endpoint.id], '#dae8fc', endpointMetadata, 'shape=component')];
+    }) : pageLayout?.ports ?? layout?.ports ?? componentPorts(endpoint.steps, positions);
+    const cells = (pageLayout?.bands ?? []).map(({id, label, x, y, width, height}) =>
+      `<mxCell ${attr({id, value: label})} vertex="1" parent="1" style="shape=umlFrame;whiteSpace=wrap;html=0;tabWidth=205;tabHeight=27;align=left;verticalAlign=top;spacingLeft=12;spacingTop=5;fillColor=none;strokeColor=#8796a8;fontStyle=1;pointerEvents=0;"><mxGeometry x="${x}" y="${y}" width="${width}" height="${height}" as="geometry"/></mxCell>`);
+    cells.push(vertex(endpoint.id, endpointLabel, ...positions[endpoint.id], '#dae8fc', endpointMetadata, 'shape=component'));
     endpoint.dependencies.forEach((dep, i) => {
       const [fill, shape] = components[dep.kind];
       cells.push(vertex(dep.id, dep.label, ...positions[dep.id], dep.pending ? '#fff2cc' : fill, {...binding(dep), ...sourceMetadata(dep)}, shape));
@@ -149,7 +152,7 @@ export function renderDrawio(audit, {layout, type = 'components'} = {}) {
       const [exitX, exitY, entryX, entryY] = portsByStep[i];
       const ports = `exitX=${exitX};exitY=${exitY};entryX=${entryX};entryY=${entryY};`;
       const label = `${i + 1}. ${step.label}`;
-      const labelOffset = layout?.labelOffsets?.[i];
+      const labelOffset = pageLayout?.labelOffsets?.[i] ?? layout?.labelOffsets?.[i];
       const offset = labelOffset ? `<mxPoint x="${labelOffset[0]}" y="${labelOffset[1]}" as="offset"/>` : '';
       const routing = sequence ? 'exitPerimeter=0;entryPerimeter=0;' : 'edgeStyle=orthogonalEdgeStyle;rounded=1;';
       cells.push(`<object ${attr({id: `__audit_edge_${i}`, label, ...sourceMetadata(step)})}><mxCell edge="1" parent="1" source="${xml(step.from)}" target="${xml(step.to)}" style="${routing}html=0;endArrow=block;labelBackgroundColor=#ffffff;${ports}strokeColor=${response ? '#15803d' : '#2563eb'};${response ? 'dashed=1;' : ''}"><mxGeometry relative="1" as="geometry">${offset}</mxGeometry></mxCell></object>`);
