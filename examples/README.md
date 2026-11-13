@@ -2,6 +2,8 @@
 
 Instala el plugin desde el clon y selecciona `backend-java` en Copilot. Usa el [servicio ficticio de cuentas](account-service/) para practicar. La [guía de instalación](../docs/copilot.md) describe cómo habilitar el plugin y comprobar la delegación.
 
+El [guion del CRUD de cuentas](accounts-crud/README.md) cubre auditoría inicial, implementación de `DELETE`, pruebas, sanity y auditoría final sobre el servicio local.
+
 [Agregar un endpoint](#agregar-un-endpoint) · [Revisar un cambio](#revisar-un-cambio) · [Auditar un endpoint](#auditar-un-endpoint) · [Recorrido de componentes](#recorrido-por-redis-saldos-bd-y-kafka) · [Pedidos por habilidad](#pedidos-por-habilidad)
 
 ## Demo reproducible
@@ -50,12 +52,6 @@ Las pruebas unitarias del servicio ficticio se ejecutan con `mvn -f examples/acc
 2. **Reconstruye el recorrido.** Sigue las llamadas del handler y las ramas que llevan a `200` o `204`. Registra qué pudo comprobar y añade citas por archivo y línea.
 3. **Valida y genera el diagrama.** El CLI comprueba que las citas y los hashes correspondan al código actual. Genera un `.drawio` editable con el contrato y el recorrido documentado.
 4. **Revisa y entrega la auditoría.** El revisor contrasta las afirmaciones con sus fuentes. Recibes el diagrama, el resumen y los límites del análisis.
-
-### Contrato y evidencia en Draw.io
-
-El GIF muestra las respuestas `200` y `204` en Swagger, cómo desplegar una cita del handler y cómo reproducir la rama que devuelve `204`.
-
-![GIF del fork de Draw.io con Swagger, una cita del código y la reproducción de la respuesta 204](../docs/images/drawio-contrato-evidencia.gif)
 
 ## Recorrido por Redis, Saldos, BD y Kafka
 

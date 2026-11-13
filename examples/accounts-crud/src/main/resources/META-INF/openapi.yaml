@@ -1,0 +1,84 @@
+openapi: 3.0.3
+info:
+  title: Cuentas CRUD de demostración
+  version: 1.0.0
+paths:
+  /accounts:
+    post:
+      operationId: register
+      summary: Registrar una cuenta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Account'
+      responses:
+        '201':
+          description: Cuenta registrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: El identificador ya existe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      operationId: list
+      summary: Listar las cuentas
+      responses:
+        '200':
+          description: Lista de cuentas, posiblemente vacía
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+  /health:
+    get:
+      operationId: health
+      summary: Comprobar salud del proceso
+      responses:
+        '200':
+          description: Proceso disponible
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [UP]
+components:
+  schemas:
+    Account:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          pattern: '^[a-zA-Z0-9-]{1,32}$'
+          example: demo-01
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+          pattern: '\S'
+          example: Cuenta de prueba
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string

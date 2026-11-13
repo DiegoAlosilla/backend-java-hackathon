@@ -2,15 +2,15 @@
 
 `backend-java` coordina cambios, revisiones y auditorías de microservicios Java desde Copilot. Delega en especialistas de contrato, implementación y pruebas, y pide una revisión independiente antes de entregar.
 
-## De la petición a la entrega
+## Demo del agente auditor
 
-> Agrega `GET /accounts/{id}/status`. Devuelve `200` con `{"active":true}` para la cuenta `demo` y `404` para otras cuentas. Actualiza OpenAPI, prueba ambos casos y pasa el cambio al revisor.
+> Audita este microservicio. Muéstrame los endpoints, el recorrido hacia Redis, la base de datos y el tópico, y las citas del código en un diagrama de componentes.
 
-El agente estudia el servicio, presenta el plan, actualiza el contrato, implementa el endpoint y ejecuta las validaciones aplicables. El revisor contrasta el diff con el contrato y los reportes. Al final recibes el resultado y la propuesta de commits para aprobar. [Ver el flujo completo y los demás ejemplos](examples/README.md)
-
-Si también pides una vista visual, puedes abrir el endpoint con su contrato, las citas del código y el recorrido. En la demo de componentes, el microservicio Cuentas lee Redis, solicita el saldo a otro microservicio, publica en Kafka y actualiza la caché antes de devolver `200`. [Ver el flujo de componentes](examples/README.md#recorrido-por-redis-saldos-bd-y-kafka)
+El GIF muestra el formato del auditor. En el ejemplo de saldo, Cuentas lee Redis, solicita el dato a otro microservicio, publica en Kafka y actualiza la caché antes de devolver `200`. [Ver el flujo y descargar el diagrama](examples/README.md#recorrido-por-redis-saldos-bd-y-kafka)
 
 ![GIF del fork de Draw.io que reproduce las diez conexiones del diagrama de componentes hasta responder HTTP 200](docs/images/drawio-flujo-componentes.gif)
+
+Para una demo de principio a fin, levanta el **CRUD de cuentas**. Audita el registro y el listado existentes, pide implementar `DELETE`, ejecuta las pruebas y vuelve a diagramar el endpoint nuevo. Usa Quarkus y adaptadores locales en memoria para Redis, BD y Kafka. [Guion de la demo CRUD](examples/accounts-crud/README.md)
 
 ## Componentes
 
@@ -38,12 +38,12 @@ npm run editor
 Con el editor abierto, ejecuta en otra terminal lo siguiente.
 
 ```powershell
-npm run demo -- --open
+node src/cli.mjs demo-overview --open
 ```
 
-El primer arranque descarga y verifica Draw.io 32.4.1. El ejemplo genera `runs/demo/account.drawio` y `runs/demo/audit.json`. Selecciona el endpoint para consultar su contrato y usa **Reproducir** en **Evidencia y recorrido**.
+El primer arranque descarga y verifica Draw.io 32.4.1. El ejemplo genera `runs/overview/overview.drawio` y `runs/overview/audit.json`. Selecciona el endpoint para consultar su contrato y usa **Reproducir** en **Evidencia y recorrido**.
 
-[Ejemplos de uso para las 17 habilidades](examples/README.md) · [Diagrama de ejemplo editable](editor/docs/evidence/audit-portable.drawio)
+[Ejemplos de uso para las 17 habilidades](examples/README.md) · [Diagrama de componentes editable](examples/overview/overview.drawio)
 
 Instala el plugin local siguiendo [la guía de Copilot](docs/copilot.md) y abre el microservicio sobre el que trabajarás. Selecciona `backend-java`.
 
