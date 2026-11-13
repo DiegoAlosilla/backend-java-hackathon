@@ -1,6 +1,16 @@
 # Backend Copilot con auditoría visual
 
-Un agente de entrada en Copilot delega el trabajo backend a especialistas y solicita una revisión independiente antes de entregar. Las auditorías generan un archivo Draw.io con endpoints, contratos OpenAPI y evidencias del código. El editor incluido permite consultar esas evidencias y reproducir el recorrido documentado.
+`backend-java` coordina cambios, revisiones y auditorías de microservicios Java desde Copilot. Delega en especialistas de contrato, implementación y pruebas, y pide una revisión independiente antes de entregar.
+
+## De la petición a la entrega
+
+> Agrega `GET /accounts/{id}/status`. Devuelve `200` con `{"active":true}` para la cuenta `demo` y `404` para otras cuentas. Actualiza OpenAPI, prueba ambos casos y pasa el cambio al revisor.
+
+El agente estudia el servicio, presenta el plan, actualiza el contrato, implementa el endpoint y ejecuta las validaciones aplicables. El revisor contrasta el diff con el contrato y los reportes. Al final recibes el resultado y la propuesta de commits para aprobar. [Ver el flujo completo y los demás ejemplos](examples/README.md)
+
+Si también pides una vista visual, puedes abrir el endpoint con su contrato, las citas del código y el recorrido. Esta captura muestra la respuesta `204` durante la reproducción del endpoint de saldo de la demo.
+
+![Draw.io muestra el recorrido de saldo, con la respuesta 204 resaltada en verde y su evidencia de código](docs/images/drawio-recorrido.png)
 
 ## Componentes
 
@@ -36,16 +46,6 @@ El primer arranque descarga y verifica Draw.io 32.4.1. El ejemplo genera `runs/d
 [Ejemplos de uso para las 17 habilidades](examples/README.md) · [Diagrama de ejemplo editable](editor/docs/evidence/audit-portable.drawio)
 
 Instala el plugin local siguiendo [la guía de Copilot](docs/copilot.md) y abre el microservicio sobre el que trabajarás. Selecciona `backend-java`.
-
-Para desarrollar y revisar un cambio puedes pedir lo siguiente.
-
-> Implementa este cambio respetando los lineamientos del servicio. Delega contexto, implementación y pruebas en los especialistas que correspondan. Solicita al revisor que contraste el diff, los criterios de aceptación y los reportes actuales. Genera y abre en Draw.io el endpoint afectado con su contrato y evidencia.
-
-Para una auditoría puedes pedir lo siguiente.
-
-> Audita el endpoint GET /accounts/{id}/balance de este microservicio. Identifica su implementación, dependencias, condiciones y errores con evidencia del código. Genera el diagrama en el editor Draw.io del plugin, vincula su contrato y permite recorrer los pasos documentados.
-
-El orquestador conserva el contexto y las decisiones del usuario. Los especialistas devuelven hechos, archivos afectados, validaciones y pendientes. El revisor contrasta esos resultados con los archivos y reportes actuales. La autorización de cambios, commits y entregas sigue el alcance solicitado y las reglas del servicio.
 
 ## Auditoría y editor
 
