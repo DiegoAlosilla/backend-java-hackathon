@@ -24,6 +24,7 @@ npm run channel:demo -- --open
 El CLI imprime el directorio bajo `runs/channel` con `spec.json`, `spec.md`, `contracts/*.openapi.yaml` y `channel.drawio`. La demo propone un UX con cinco operaciones y siete dependencias Business, con páginas de aprobación y rechazo crediticio. Mantiene abiertas las equivalencias BIAN de evaluación y simulación, y la decisión de conciliación del desembolso.
 
 - En el diagrama, selecciona la primera figura UX y pulsa **Reproducir**. Las capas forman franjas de arriba abajo: Frontend → APIM → MS en AKS → Business / Capa Producto. Las etapas avanzan de izquierda a derecha. Los consumos de cada etapa se ordenan dentro de la franja inferior y las respuestas regresan por APIM.
+- Amarillo indica implementación nueva y blanco indica un componente existente. Un borde discontinuo y la palabra **Pendiente** identifican consumos por resolver. En la demo, el Frontend y las APIs Business se reutilizan. Las rutas APIM y el UX son nuevos.
 - Selecciona un consumo Business para ver en Swagger el método, la ruta, el esquema y la revisión empleada.
 - En **Contratos → Repositorio Business**, busca `desembolso`, `lead`, `CXI` u otro término. Abrir un resultado trae esa revisión al documento y expande la operación seleccionada. Puedes añadir la figura al lienzo desde Swagger.
 - Los contratos de la demo contienen solo definiciones OpenAPI. El reproductor recorre las interacciones diseñadas y el buscador lee Git. Ambos funcionan sin levantar los microservicios de ejemplo.
@@ -55,6 +56,8 @@ Usa el `spec.json` generado por la demo como ejemplo editable.
 | `stages[].bian` | `domain`, `method`, `path` de una operación BIAN consultada. Si se omite, el generador registra la equivalencia como pendiente. Una ruta UX con referencia confirmada termina con la acción semántica de esa referencia. |
 | `stages[].calls[]` | Orden de consumos de una etapa. Cada uno declara `layer` (`Business` o `Producto`) y `purpose`. Usa `contract` con `file`, `method`, `path`, `sha256` y un `outcome` esperado, o usa `pending` con la decisión abierta. `mapping` registra pares `from` y `to` revisados durante la entrevista. |
 | `scenarios[]` | Páginas opcionales con `id`, `title` y `steps[]`. Cada paso referencia `stage` y admite `response`, `callCount` para recorrer solo las primeras llamadas, y `callOutcomes` para describir respuestas alternativas. Sin escenarios, se recorren todas las etapas en orden. |
+
+Los campos opcionales `services[].status`, `stages[].frontendStatus`, `stages[].apimStatus` y `stages[].calls[].status` (para consumos pendientes) aceptan `new` o `existing`. Por defecto, el generador dibuja UX y APIM como nuevos, y Frontend y contratos Business vinculados como existentes. Una dependencia pendiente de clasificación queda sin relleno, con borde discontinuo y la etiqueta **Pendiente**.
 
 La spec es la fuente para regenerar. Una regeneración crea otra propuesta bajo `--out` y conserva los archivos previamente revisados. El `.drawio` guarda las revisiones de los contratos consultados para que sus figuras puedan revisarse en otro perfil.
 

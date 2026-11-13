@@ -52,6 +52,19 @@ test('catálogo Git y diseño de préstamos en el fork', async ({page, baseURL})
   }
   await page.evaluate(data => channelUi.setFileData(data), xml);
   await expect(page.getByRole('button', {name: 'Reproducir', exact: true})).toBeVisible();
+  const labels = await page.evaluate(() => {
+    const graph = channelUi.editor.graph;
+    return Object.values(graph.model.cells).filter(cell => cell.value?.hasAttribute?.('implementationStatus')).map(cell => {
+      const state = graph.view.getState(cell), text = state.text.boundingBox;
+      return {id: cell.id, fill: state.style.fillColor, fits: text.x >= state.x && text.y >= state.y &&
+        text.x + text.width <= state.x + state.width && text.y + text.height <= state.y + state.height};
+    });
+  });
+  expect(labels.find(cell => cell.id === '__frontend-0').fill).toBe('#ffffff');
+  expect(labels.find(cell => cell.id === '__dependency-0-0').fill).toBe('#ffffff');
+  expect(labels.find(cell => cell.id === '__apim-0').fill).toBe('#fff2cc');
+  expect(labels.find(cell => cell.id === 'aprobado').fill).toBe('#fff2cc');
+  expect(labels.filter(cell => !cell.fits)).toEqual([]);
   await page.getByRole('button', {name: 'Reproducir', exact: true}).click();
   await expect(page.locator('[data-audit-animation]')).toHaveCount(1);
   await page.getByRole('button', {name: 'Reiniciar', exact: true}).click();

@@ -116,9 +116,11 @@ export function renderDrawio(audit, {layout, type = 'components'} = {}) {
     const pageLayout = layout?.pages?.[endpoint.id];
     const flow = {version: 1, steps: endpoint.steps.map((step, i) => ({cellId: step.to, edgeId: `__audit_edge_${i}`, direction: step.direction, label: step.label}))};
     function vertex(id, label, x, y, fill, metadata = {}, shape = 'rounded=1') {
-      const height = sequence ? 110 + endpoint.steps.length * 48 : 100;
+      const presentation = pageLayout?.vertices?.[id];
+      const height = presentation?.height ?? (sequence ? 110 + endpoint.steps.length * 48 : 100);
       const style = sequence ? 'shape=umlLifeline;size=56' : shape;
-      return `<object ${attr({id, label, ...metadata})}><mxCell vertex="1" parent="1" style="${style};whiteSpace=wrap;html=0;fillColor=${fill};strokeColor=#64748b;fontSize=14;"><mxGeometry x="${x}" y="${y}" width="${layout?.nodeWidth ?? 200}" height="${height}" as="geometry"/></mxCell></object>`;
+      const spacing = presentation ? `spacingLeft=${shape === 'shape=component' ? 20 : 12};spacingRight=12;spacingTop=8;spacingBottom=8;fontColor=#1e293b;${presentation.pending ? 'dashed=1;' : ''}` : '';
+      return `<object ${attr({id, label, ...metadata})}><mxCell vertex="1" parent="1" style="${style};whiteSpace=wrap;html=0;fillColor=${presentation?.fill ?? fill};strokeColor=#64748b;fontSize=14;${spacing}"><mxGeometry x="${x}" y="${y}" width="${layout?.nodeWidth ?? 200}" height="${height}" as="geometry"/></mxCell></object>`;
     }
     const sourceMetadata = item => audit.design
       ? {designDecisions: item.decisions ?? [], ...item.metadata}

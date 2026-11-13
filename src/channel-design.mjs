@@ -10,12 +10,43 @@ const idPattern = /^[a-z][a-z0-9-]{0,79}$/;
 const nodeWidth = 280;
 const callSpacing = 310;
 const bandX = 22;
-const channelRows = [
-  {label: 'Frontend', y: 20, height: 163},
-  {label: 'APIM', y: 201, height: 163},
-  {label: 'MS en AKS', y: 382, height: 163},
-  {label: 'Business / Capa Producto', y: 563, height: 163},
-];
+const channelRows = ['Frontend', 'APIM', 'MS en AKS', 'Business / Capa Producto'];
+
+function fitLabel(label) {
+  const lines = [];
+  const measure = character => /[ilI1 .,:;|!'/{}]/u.test(character) ? 6 : /[\p{Script=Han}\p{Extended_Pictographic}WM@%]/u.test(character) ? 16 : 10;
+  for (const paragraph of label.split(/\r?\n/)) {
+    let line = '', width = 0;
+    for (const token of paragraph.match(/[^\s/_.-]+[\/_.-]?|./gu) ?? []) {
+      const characters = [...token];
+      const tokenWidth = characters.reduce((total, character) => total + measure(character), 0);
+      if (line && width + tokenWidth > 222) {
+        lines.push(line.trimEnd());
+        line = '';
+        width = 0;
+      }
+      for (const character of characters) {
+        if (!line && character === ' ') continue;
+        const size = measure(character);
+        if (width + size > 222) {
+          lines.push(line.trimEnd());
+          line = '';
+          width = 0;
+        }
+        line += character;
+        width += size;
+      }
+    }
+    lines.push(line.trimEnd());
+  }
+  return {label: lines.join('\n'), height: Math.max(100, lines.length * 19 + 30)};
+}
+
+function implementation(value, fallback, field) {
+  if (value == null) return fallback;
+  requireValue(['new', 'existing'].includes(value), `${field} debe ser new o existing.`);
+  return value;
+}
 
 function requireValue(condition, message) {
   if (!condition) throw new Error(message);
@@ -56,7 +87,7 @@ export async function buildChannel(input, {repo, ref} = {}) {
   for (const service of array(input.services, 'services', 12, 1)) {
     const id = uniqueId(service?.id, serviceIds, 'servicio UX');
     services.set(id, {title: text(service.title, `${id}.title`, 120), responsibility: text(service.responsibility, `${id}.responsibility`),
-      components: service.components, security: service.security, paths: {}});
+      status: implementation(service.status, 'new', `${id}.status`), components: service.components, security: service.security, paths: {}});
   }
 
   for (const stage of array(input.stages, 'stages', 25, 1)) {
@@ -64,6 +95,8 @@ export async function buildChannel(input, {repo, ref} = {}) {
     const title = text(stage.title, `${id}.title`, 120), purpose = text(stage.purpose, `${id}.purpose`);
     const service = services.get(stage.service);
     requireValue(service, `Servicio UX desconocido en ${id}.`);
+    const frontendStatus = implementation(stage.frontendStatus, 'existing', `${id}.frontendStatus`);
+    const apimStatus = implementation(stage.apimStatus, 'new', `${id}.apimStatus`);
     const stageDecisions = [{id, text: purpose}, ...array(stage.rules ?? [], `${id}.rules`, 20).map((rule, i) => ({id: `${id}-${i + 1}`, text: text(rule, 'regla')}))];
     const method = stage.operation?.method, route = stage.operation?.path;
     requireValue(verbs.includes(method) && typeof route === 'string' && /^\/[a-zA-Z0-9_{}./-]+$/.test(route) && route.length <= 160, `Método o ruta UX inválidos en ${id}.`);
@@ -90,7 +123,7 @@ export async function buildChannel(input, {repo, ref} = {}) {
         requireValue(!call.contract, `La dependencia pendiente ${label} no puede incluir una referencia confirmada.`);
         const pending = text(call.pending, `${id}.calls.pending`);
         questions.push(`${title}: ${pending}`);
-        calls.push({label, layer: call.layer, pending});
+        calls.push({label, layer: call.layer, pending, status: implementation(call.status, 'pending', `${id}.calls.status`)});
         continue;
       }
       const reference = call.contract;
@@ -106,7 +139,7 @@ export async function buildChannel(input, {repo, ref} = {}) {
       const mapping = array(call.mapping ?? [], `${id}.calls.mapping`, 30).map(item => `${text(item?.from, 'campo fuente', 120)} → ${text(item?.to, 'campo destino', 120)}`);
       calls.push({label, layer: call.layer, reference, operationRef, outcome, mapping, service: contract.title, version: contract.declaredVersion});
     }
-    resolved.set(id, {id, title, purpose, serviceId: stage.service, service, method, route, bianRef, calls, success, responses, decisions: stageDecisions});
+    resolved.set(id, {id, title, purpose, serviceId: stage.service, service, frontendStatus, apimStatus, method, route, bianRef, calls, success, responses, decisions: stageDecisions});
   }
 
   for (const [id, service] of services) {
@@ -129,7 +162,18 @@ export async function buildChannel(input, {repo, ref} = {}) {
   const endpoints = array(input.scenarios ?? defaultScenario, 'scenarios', 20, 1).map(scenario => {
     const id = uniqueId(scenario?.id, scenarioIds, 'escenario'), title = text(scenario.title, `${id}.title`, 120);
     const page = {id, pageName: title, dependencies: [], findings: [], steps: [], decisions};
-    const positions = {}, ports = [], labelOffsets = [];
+    const positions = {}, vertices = {}, ports = [], labelOffsets = [];
+    const rows = channelRows.map(label => ({label, cells: [], height: 100}));
+    const place = (row, cell, x, status) => {
+      const {label, height} = fitLabel(cell.label);
+      rows[row].cells.push({id: cell.id, x});
+      rows[row].height = Math.max(rows[row].height, height);
+      const fill = {new: '#fff2cc', existing: '#ffffff', pending: 'none'}[status];
+      vertices[cell.id] = {height, fill, pending: Boolean(cell.pending)};
+      cell.label = label;
+      cell.metadata = {...cell.metadata, implementationStatus: status};
+      return cell;
+    };
     const last = array(scenario.steps, `${id}.steps`, 25, 1).length - 1;
     const step = (from, to, direction, label, fromPort, toPort, offset) => {
       page.steps.push({from, to, direction, label});
@@ -146,18 +190,15 @@ export async function buildChannel(input, {repo, ref} = {}) {
       const ux = i === 0 ? id : `__ux-${i}`, client = `__frontend-${i}`, gateway = `__apim-${i}`;
       const label = `${i + 1}. ${stage.title}\nUX · ${stage.service.title}\n${stage.method} ${stage.route}`;
       const metadata = {contractClassification: 'UX', ...(stage.bianRef && {designBian: stage.bianRef})};
-      const vertex = {id: ux, label, kind: 'service', operationRef: stage.operationRef, decisions: stage.decisions, metadata};
-      if (i === 0) Object.assign(page, {label, metadata: {...metadata, designChannel: '1'}, operationRef: vertex.operationRef, decisions: [...decisions, ...stage.decisions]});
-      else page.dependencies.push(vertex);
       const count = item.callCount ?? stage.calls.length;
       requireValue(Number.isInteger(count) && count >= 0 && count <= stage.calls.length, `callCount inválido en ${id}/${stage.id}.`);
       const outcomes = array(item.callOutcomes ?? [], `${id}.callOutcomes`, count).map(outcome => text(outcome, 'respuesta alternativa', 160));
       const center = x + Math.max(0, count - 1) * callSpacing / 2;
-      positions[client] = [center, channelRows[0].y + 48];
-      positions[gateway] = [center, channelRows[1].y + 48];
-      positions[ux] = [center, channelRows[2].y + 48];
-      page.dependencies.push({id: client, label: `${i + 1}. ${stage.title}\n${frontend}`, kind: 'api'},
-        {id: gateway, label: `APIM\n${stage.method} ${stage.route}`, kind: 'api'});
+      const vertex = place(2, {id: ux, label, kind: 'service', operationRef: stage.operationRef, decisions: stage.decisions, metadata}, center, stage.service.status);
+      if (i === 0) Object.assign(page, {label: vertex.label, metadata: {...vertex.metadata, designChannel: '1'}, operationRef: vertex.operationRef, decisions: [...decisions, ...stage.decisions]});
+      else page.dependencies.push(vertex);
+      page.dependencies.push(place(0, {id: client, label: `${i + 1}. ${stage.title}\n${frontend}`, kind: 'api'}, center, stage.frontendStatus),
+        place(1, {id: gateway, label: `APIM\n${stage.method} ${stage.route}`, kind: 'api'}, center, stage.apimStatus));
       step(client, gateway, 'request', 'Solicitar', [0.34, 1], [0.34, 0], [-22, 0]);
       step(gateway, ux, 'request', 'Enrutar a AKS', [0.34, 1], [0.34, 0], [-22, 0]);
       const slot = 1 / (2 * count + 1);
@@ -166,10 +207,9 @@ export async function buildChannel(input, {repo, ref} = {}) {
         const meta = {contractClassification: call.layer};
         if (call.reference) meta.contractSource = {commit: input.catalogCommit, ...(catalog.repository && {repository: catalog.repository}), ...call.reference};
         if (call.pending) Object.assign(meta, {contractState: 'pending', authorPurpose: call.label});
-        positions[target] = [x + j * callSpacing, channelRows[3].y + 48];
-        page.dependencies.push({id: target, kind: 'service', operationRef: call.operationRef, pending: call.pending, metadata: meta,
+        page.dependencies.push(place(3, {id: target, kind: 'service', operationRef: call.operationRef, pending: call.pending, metadata: meta,
           label: call.pending ? `${call.layer} · Pendiente\n${call.label}` : `${call.layer} · ${call.service}\n${call.reference.method} ${call.reference.path}`,
-          decisions: [{id: `${stage.id}-consumo-${j + 1}`, text: call.pending ?? [call.label, ...call.mapping].join(' · ')}]});
+          decisions: [{id: `${stage.id}-consumo-${j + 1}`, text: call.pending ?? [call.label, ...call.mapping].join(' · ')}]}, x + j * callSpacing, call.status ?? 'existing'));
         step(ux, target, 'request', call.pending ? `Pendiente · ${call.label}` : call.label, [(2 * j + 1) * slot, 1], [0.38, 0], [-20, 0]);
         if (call.outcome) step(target, ux, 'response', outcomes[j] ?? call.outcome, [0.62, 0], [(2 * j + 2) * slot, 1], [20, 0]);
       }
@@ -179,9 +219,17 @@ export async function buildChannel(input, {repo, ref} = {}) {
       x += (Math.max(1, count) - 1) * callSpacing + nodeWidth + 125;
     }
     requireValue(page.steps.length <= 500, `El escenario ${id} excede los 500 pasos del reproductor.`);
-    const bands = channelRows.map(({label, y, height}, index) => ({id: `__band-${index}`, label, x: bandX, y,
-      width: x - bandX - 75, height}));
-    return {page, layout: {positions, ports, labelOffsets, bands}};
+    let y = 20;
+    const bands = rows.map((row, index) => {
+      const band = {id: `__band-${index}`, label: row.label, x: bandX, y, width: x - bandX - 75, height: row.height + 63};
+      for (const cell of row.cells) {
+        positions[cell.id] = [cell.x, y + 48];
+        vertices[cell.id].height = row.height;
+      }
+      y += band.height + 18;
+      return band;
+    });
+    return {page, layout: {positions, ports, labelOffsets, bands, vertices}};
   });
   requireValue(used.size === resolved.size, 'Cada etapa debe aparecer en algún escenario.');
 
